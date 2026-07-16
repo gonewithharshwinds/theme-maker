@@ -11,6 +11,7 @@ import { QueryProvider } from "@/lib/query-client";
 import type { Metadata, Viewport } from "next";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { Suspense } from "react";
+import { PwaRegistrar } from "@/components/pwa-registrar";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -79,6 +80,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="darkreader-lock" />
       </head>
       <body>
+        <PwaRegistrar />
         <NuqsAdapter>
           <Suspense>
             <QueryProvider>
