@@ -1,0 +1,2269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Figma Tokens Matrix & Custom Code Profile Automation Canvas</title>
+  
+  <!-- Premium Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ==========================================================================
+       1. Global Figma Interface Styles
+       ========================================================================== */
+    :root {
+      --bg-figma-dark: #1e1e1e;
+      --bg-figma-sidebar: #2c2c2c;
+      --bg-figma-canvas: #121214;
+      --border-figma: #3c3c3c;
+      --border-active: #0c8ce9; /* Figma Blue */
+      --text-figma-main: #e3e3e3;
+      --text-figma-muted: #b3b3b3;
+      --text-figma-disabled: #757575;
+      
+      --accent-figma: #0c8ce9;
+      --accent-figma-hover: #189eff;
+      
+      --success: #10b981;
+      --danger: #f87171;
+      --shadow-figma: 0 4px 20px rgba(0, 0, 0, 0.4);
+      --radius-figma: 6px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Inter', -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-figma-canvas);
+      color: var(--text-figma-main);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-figma-canvas);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #444;
+      border-radius: 4px;
+      border: 2px solid var(--bg-figma-canvas);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+
+    /* ==========================================================================
+       2. Figma Layout (Top Bar, Left Sidebar, Canvas Area)
+       ========================================================================== */
+    header.figma-top-bar {
+      height: 48px;
+      background-color: var(--bg-figma-sidebar);
+      border-bottom: 1px solid var(--border-figma);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 1rem;
+      z-index: 100;
+      flex-shrink: 0;
+    }
+
+    .figma-logo-group {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .figma-logo {
+      width: 20px;
+      height: 30px;
+      background: linear-gradient(180deg, #f24e1e 0%, #a259ff 50%, #0acf83 100%);
+      border-radius: 3px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .figma-title {
+      font-weight: 600;
+      font-size: 0.85rem;
+      letter-spacing: -0.01em;
+    }
+
+    .canvas-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .app-workspace {
+      display: flex;
+      flex: 1;
+      height: calc(100vh - 48px);
+      overflow: hidden;
+    }
+
+    /* Left Sidebar: Layers & Groups */
+    .figma-sidebar {
+      width: 240px;
+      background-color: var(--bg-figma-sidebar);
+      border-right: 1px solid var(--border-figma);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .sidebar-section {
+      padding: 0.75rem 0.5rem;
+      border-bottom: 1px solid var(--border-figma);
+    }
+
+    .sidebar-section-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-figma-muted);
+      padding: 0.25rem 0.5rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .layer-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      color: var(--text-figma-main);
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.1s ease;
+    }
+
+    .layer-item:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .layer-item.active {
+      background-color: rgba(12, 140, 233, 0.2);
+      color: #fff;
+      font-weight: 500;
+    }
+
+    .layer-icon {
+      width: 14px;
+      height: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-figma-muted);
+    }
+
+    /* Main Canvas Work Area */
+    .figma-canvas {
+      flex: 1;
+      overflow: auto;
+      padding: 3rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 4rem;
+      background-color: var(--bg-figma-canvas);
+      /* Grid overlay */
+      background-image: 
+        radial-gradient(var(--border-figma) 1px, transparent 1px);
+      background-size: 24px 24px;
+      position: relative;
+    }
+
+    /* Figma Frame Container */
+    .figma-frame {
+      background-color: var(--bg-figma-dark);
+      border: 1px solid var(--border-figma);
+      border-radius: var(--radius-figma);
+      box-shadow: var(--shadow-figma);
+      min-width: 580px;
+      max-width: 1200px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      flex-shrink: 0;
+    }
+
+    .frame-label {
+      position: absolute;
+      top: -24px;
+      left: 0;
+      font-size: 0.75rem;
+      color: var(--text-figma-muted);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .frame-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border-figma);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: rgba(255, 255, 255, 0.02);
+    }
+
+    .frame-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .frame-body {
+      padding: 1.25rem;
+      overflow-y: auto;
+      max-height: 80vh;
+    }
+
+    /* Token Matrix Library Cards (Figma Card List) */
+    .token-library-container {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+      width: 100%;
+    }
+
+    .token-group-card {
+      border: 2px solid var(--border-figma);
+      border-radius: var(--radius-figma);
+      background-color: rgba(255, 255, 255, 0.01);
+      transition: all 0.2s ease;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .token-group-card:hover {
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    /* Selected Figma Frame State */
+    .token-group-card.selected {
+      border-color: var(--border-active);
+      box-shadow: 0 0 0 2px rgba(12, 140, 233, 0.25);
+    }
+
+    .token-group-card-header {
+      padding: 0.75rem 1rem;
+      background-color: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--border-figma);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .token-group-card-title {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-figma-main);
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .token-group-selection-indicator {
+      position: absolute;
+      top: -20px;
+      left: -2px;
+      background-color: var(--border-active);
+      color: #fff;
+      font-size: 0.6rem;
+      padding: 2px 6px;
+      border-radius: 3px 3px 0 0;
+      font-weight: 700;
+      display: none;
+    }
+
+    .token-group-card.selected .token-group-selection-indicator {
+      display: block;
+    }
+
+    /* ==========================================================================
+       3. Token Library Grid UI (Editable Spreadsheet Format)
+       ========================================================================== */
+    .token-grid-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+    }
+
+    .token-grid-table th {
+      text-align: left;
+      padding: 0.6rem 0.75rem;
+      border-bottom: 1px solid var(--border-figma);
+      color: var(--text-figma-muted);
+      font-weight: 500;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .token-grid-table td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      vertical-align: middle;
+    }
+
+    .token-row:hover {
+      background-color: rgba(255, 255, 255, 0.015);
+    }
+
+    .token-meta-cell {
+      display: flex;
+      flex-direction: column;
+      gap: 0.15rem;
+    }
+
+    .token-name-label {
+      font-weight: 500;
+    }
+
+    .token-key-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-figma-muted);
+    }
+
+    /* Visual preview block inside matrix cells */
+    .visual-indicator-swatch {
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      display: inline-block;
+      vertical-align: middle;
+      box-shadow: inset 0 0 2px rgba(0, 0, 0, 0.2);
+    }
+
+    .visual-indicator-bar {
+      height: 6px;
+      background-color: var(--accent-figma);
+      border-radius: 3px;
+      display: inline-block;
+      vertical-align: middle;
+      max-width: 60px;
+    }
+
+    /* Autocomplete Ghost Input Wrapper */
+    .autocomplete-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      background-color: #121212;
+      border: 1px solid var(--border-figma);
+      border-radius: 4px;
+      padding: 0 0.5rem;
+      height: 28px;
+      width: 100%;
+      min-width: 160px;
+    }
+
+    .autocomplete-wrapper:focus-within {
+      border-color: var(--border-active);
+      box-shadow: 0 0 0 1px var(--border-active);
+    }
+
+    .autocomplete-input {
+      background: transparent !important;
+      border: none !important;
+      color: var(--text-figma-main) !important;
+      font-family: 'JetBrains Mono', monospace !important;
+      font-size: 0.75rem !important;
+      width: 100% !important;
+      height: 100% !important;
+      outline: none !important;
+      position: relative !important;
+      z-index: 2 !important;
+      padding: 0 !important;
+    }
+
+    .autocomplete-suggestion {
+      position: absolute;
+      left: 0.5rem;
+      color: #64748b;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      font-style: italic;
+      pointer-events: none;
+      z-index: 1;
+      white-space: pre;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      right: 0.5rem;
+    }
+
+    /* Swatch in cell helper */
+    .cell-swatch-box {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      margin-right: 0.4rem;
+      display: inline-block;
+      flex-shrink: 0;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .flex-center-y {
+      display: flex;
+      align-items: center;
+    }
+
+    /* Copy button in rows */
+    .row-copy-btn {
+      opacity: 0;
+      background: transparent;
+      border: none;
+      color: var(--text-figma-muted);
+      cursor: pointer;
+      padding: 2px;
+      border-radius: 3px;
+      transition: opacity 0.2s ease, color 0.1s ease;
+    }
+
+    .token-row:hover .row-copy-btn {
+      opacity: 1;
+    }
+
+    .row-copy-btn:hover {
+      color: #fff;
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    /* Buttons */
+    .figma-btn {
+      background-color: var(--accent-figma);
+      color: #ffffff;
+      border: none;
+      padding: 0.4rem 0.8rem;
+      border-radius: 4px;
+      font-weight: 500;
+      font-size: 0.75rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .figma-btn:hover {
+      background-color: var(--accent-figma-hover);
+    }
+
+    .figma-btn-secondary {
+      background-color: transparent;
+      color: var(--text-figma-main);
+      border: 1px solid var(--border-figma);
+    }
+
+    .figma-btn-secondary:hover {
+      background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    .figma-btn-danger {
+      background-color: transparent;
+      color: var(--danger);
+      border: 1px solid rgba(248, 113, 113, 0.2);
+    }
+
+    .figma-btn-danger:hover {
+      background-color: rgba(248, 113, 113, 0.1);
+      border-color: var(--danger);
+    }
+
+    /* ==========================================================================
+       4. Component Sticker Sheet (Figma Design Layout)
+       ========================================================================== */
+    .canvas-preview-frame {
+      min-width: 620px;
+      max-width: 720px;
+    }
+
+    /* Interactive Preview Switch Tabs */
+    .preview-mode-tabs {
+      display: flex;
+      gap: 0.5rem;
+      background-color: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border-figma);
+      padding: 0.25rem;
+      border-radius: 6px;
+    }
+
+    .preview-mode-tab-btn {
+      background: transparent;
+      border: none;
+      padding: 0.35rem 0.75rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-figma-muted);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .preview-mode-tab-btn.active {
+      background-color: var(--accent-figma);
+      color: #fff;
+    }
+
+    .theme-preview-wrapper {
+      padding: 1.5rem;
+      border-radius: var(--radius-figma);
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+      transition: background-color 0.3s ease;
+      min-height: 480px;
+    }
+
+    .theme-preview-wrapper.theme-mode-light {
+      background-color: var(--theme-preview-canvas-bg, #f3f4f6);
+      color: var(--theme-preview-card-foreground, #1e293b);
+    }
+
+    .theme-preview-wrapper.theme-mode-dark {
+      background-color: var(--theme-preview-canvas-bg, #0f172a);
+      color: var(--theme-preview-card-foreground, #f3f4f6);
+    }
+
+    /* Component stickers dynamic layout */
+    .preview-card-comp {
+      background-color: var(--theme-preview-card-bg);
+      border: 1px solid var(--theme-preview-card-border);
+      border-radius: var(--theme-preview-card-radius);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      font-family: var(--theme-preview-font-sans);
+    }
+
+    .preview-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--theme-preview-card-foreground);
+      letter-spacing: var(--theme-preview-letter-spacing);
+    }
+
+    .preview-desc {
+      font-size: 0.8rem;
+      color: var(--theme-preview-muted-foreground);
+      line-height: 1.45;
+    }
+
+    .form-group-comp {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .input-comp {
+      background-color: var(--theme-preview-input-bg);
+      border: 1px solid var(--theme-preview-card-border);
+      border-radius: var(--theme-preview-input-radius);
+      color: var(--theme-preview-card-foreground);
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      outline: none;
+      font-family: var(--theme-preview-font-sans);
+    }
+
+    .input-comp:focus {
+      border-color: var(--theme-preview-ring);
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+    }
+
+    .comp-button-row {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    .comp-btn-primary {
+      background-color: var(--theme-preview-primary);
+      color: var(--theme-preview-primary-foreground);
+      border: none;
+      padding: 0.55rem 1rem;
+      border-radius: var(--theme-preview-button-radius);
+      font-weight: 600;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      gap: 0.4rem;
+      font-family: var(--theme-preview-font-sans);
+      transition: opacity 0.2s ease;
+    }
+
+    .comp-btn-primary:hover {
+      opacity: 0.9;
+    }
+
+    .comp-btn-secondary {
+      background-color: var(--theme-preview-secondary);
+      color: var(--theme-preview-secondary-foreground);
+      border: 1px solid var(--theme-preview-card-border);
+      padding: 0.55rem 1rem;
+      border-radius: var(--theme-preview-button-radius);
+      font-weight: 600;
+      font-size: 0.8rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--theme-preview-font-sans);
+    }
+
+    /* Small Navbar Preview sticker */
+    .preview-nav-comp {
+      background-color: var(--theme-preview-card-bg);
+      border: 1px solid var(--theme-preview-card-border);
+      border-radius: var(--theme-preview-card-radius);
+      padding: 0.75rem 1.25rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-logo-group {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 700;
+      font-size: 0.8rem;
+    }
+
+    .nav-dot {
+      width: 8px;
+      height: 8px;
+      background-color: var(--theme-preview-primary);
+      border-radius: 50%;
+    }
+
+    .nav-avatar {
+      width: 24px;
+      height: 24px;
+      background-color: var(--theme-preview-secondary);
+      border-radius: 50%;
+      border: 1px solid var(--theme-preview-card-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.6rem;
+      font-weight: 600;
+    }
+
+    /* Alert Badge sticker */
+    .comp-badge-group {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .comp-badge {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.5rem;
+      border-radius: 9999px;
+      font-weight: 600;
+      background-color: rgba(99, 102, 241, 0.1);
+      color: var(--theme-preview-primary);
+      border: 1px solid rgba(99, 102, 241, 0.15);
+    }
+
+    /* ==========================================================================
+       4B. CORE EDITOR VIEW: Live Element Builder Sandbox
+       ========================================================================== */
+    .element-builder-sandbox {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 1.5rem;
+      width: 100%;
+      background: rgba(0, 0, 0, 0.15);
+      border-radius: var(--radius-figma);
+      padding: 1.25rem;
+      border: 1px solid var(--border-figma);
+    }
+
+    .sandbox-builder-form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      border-right: 1px solid var(--border-figma);
+      padding-right: 1.25rem;
+    }
+
+    .sandbox-render-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 280px;
+      background: radial-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 16px 16px;
+      border-radius: 4px;
+      position: relative;
+    }
+
+    .element-list-select {
+      background-color: #121212;
+      border: 1px solid var(--border-figma);
+      color: #fff;
+      padding: 0.4rem;
+      font-size: 0.75rem;
+      width: 100%;
+      border-radius: 4px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    .custom-shape-preview-box {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      text-align: center;
+      padding: 0.5rem;
+      overflow: hidden;
+    }
+
+    .sandbox-info-tag {
+      position: absolute;
+      bottom: 0.5rem;
+      left: 0.5rem;
+      font-size: 0.65rem;
+      color: var(--text-figma-muted);
+      background: rgba(0,0,0,0.4);
+      padding: 2px 6px;
+      border-radius: 3px;
+    }
+
+    /* ==========================================================================
+       5. Right Panel: Code Profile Generator & Workspace Imports
+       ========================================================================== */
+    .canvas-code-frame {
+      min-width: 480px;
+      max-width: 520px;
+    }
+
+    .code-tabs-row {
+      display: flex;
+      gap: 0.25rem;
+      background-color: #121212;
+      padding: 0.2rem;
+      border-radius: 4px;
+      border: 1px solid var(--border-figma);
+      margin-bottom: 0.75rem;
+      overflow-x: auto;
+    }
+
+    .code-tab-btn {
+      background: transparent;
+      border: none;
+      padding: 0.35rem 0.65rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-figma-muted);
+      border-radius: 3px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .code-tab-btn.active {
+      background-color: var(--bg-figma-sidebar);
+      color: var(--text-figma-main);
+    }
+
+    .code-editor-box {
+      background-color: #0c0d0e;
+      border: 1px solid var(--border-figma);
+      border-radius: 4px;
+      height: 280px;
+      overflow: auto;
+      padding: 1rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      line-height: 1.45;
+      color: #a5b4fc;
+      white-space: pre;
+      margin-bottom: 1rem;
+    }
+
+    .template-card {
+      border-top: 1px solid var(--border-figma);
+      padding-top: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .template-box {
+      width: 100%;
+      height: 140px;
+      background-color: #0c0d0e;
+      border: 1px solid var(--border-figma);
+      border-radius: 4px;
+      color: #f3f4f6;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      padding: 0.5rem;
+      resize: none;
+      outline: none;
+    }
+
+    /* Paste Import Drawer Dialog */
+    .bulk-import-section {
+      background-color: rgba(255, 255, 255, 0.02);
+      border: 1px dashed var(--border-figma);
+      border-radius: var(--radius-figma);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .bulk-import-textarea {
+      width: 100%;
+      height: 80px;
+      background-color: #121212;
+      border: 1px solid var(--border-figma);
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--text-figma-main);
+      padding: 0.5rem;
+      outline: none;
+      resize: none;
+    }
+
+    /* ==========================================================================
+       6. Interactive Alerts & Overlays
+       ========================================================================== */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background-color: #0c8ce9;
+      color: #fff;
+      padding: 0.6rem 1.2rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 2000;
+    }
+
+    .toast.active {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .pantone-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      font-size: 0.65rem;
+      padding: 1px 4px;
+      border-radius: 3px;
+      background-color: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      margin-top: 2px;
+      width: fit-content;
+      color: var(--text-figma-muted);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- FIGMA STYLE TOP APP BAR -->
+  <header class="figma-top-bar">
+    <div class="figma-logo-group">
+      <div class="figma-logo"></div>
+      <div class="figma-title">Automation Layer Canvas (Select & Duplicate Mode)</div>
+    </div>
+    <div class="canvas-actions">
+      <!-- Mode toggler -->
+      <div class="mode-toggle-group">
+        <button class="mode-btn active" id="mode-btn-light" onclick="setThemeMode('light')">Light Preview</button>
+        <button class="mode-btn" id="mode-btn-dark" onclick="setThemeMode('dark')">Dark Preview</button>
+      </div>
+      <button class="figma-btn figma-btn-secondary" onclick="resetDefaultTokens()">Reset Canvas</button>
+    </div>
+  </header>
+
+  <!-- FIGMA STYLE WORKSPACE -->
+  <div class="app-workspace">
+    
+    <!-- LEFT SIDEBAR: Figma Layers and Groups navigation -->
+    <div class="figma-sidebar">
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">Layers / Focus</div>
+        <div class="layer-item active" onclick="scrollToFrame('frame-token-library', this)">
+          <div class="layer-icon">⚄</div>
+          <span>Frame: Token Matrix</span>
+        </div>
+        <div class="layer-item" onclick="scrollToFrame('frame-component-preview', this)">
+          <div class="layer-icon">❖</div>
+          <span>Frame: Preview stickers</span>
+        </div>
+        <div class="layer-item" onclick="scrollToFrame('frame-export-center', this)">
+          <div class="layer-icon">⚏</div>
+          <span>Frame: Code Exports</span>
+        </div>
+      </div>
+      
+      <div class="sidebar-section" id="layers-tokens-sublist" style="max-height: 250px; overflow-y: auto;">
+        <div class="sidebar-section-title">Token Groups</div>
+        <!-- Populate dynamic layers by JS -->
+      </div>
+      
+      <div class="sidebar-section" style="border-bottom: none; flex: 1; display: flex; flex-direction: column; justify-content: flex-end; padding: 1.5rem 1rem;">
+        <div style="font-size: 0.7rem; color: var(--text-figma-muted); line-height: 1.5;">
+          <p style="font-weight: 600; margin-bottom: 0.25rem;">INSTRUCTIONS:</p>
+          <ul style="list-style-type: none; padding-left: 0;">
+            <li style="margin-bottom: 0.4rem;">1. **Click** any Token group table to highlight and select it.</li>
+            <li style="margin-bottom: 0.4rem;">2. Click **Duplicate Selected Group** in top header to copy the block.</li>
+            <li style="margin-bottom: 0.4rem;">3. Toggle between **Editor View** and **Producer View** in the Component Showcase Frame!</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN FIGMA CANVAS WORKSPACE -->
+    <div class="figma-canvas" id="workspace-canvas">
+      
+      <!-- FRAME 1: Token Library Grid (Editable Matrix) -->
+      <div class="figma-frame" id="frame-token-library" style="min-width: 640px;">
+        <div class="frame-label">
+          <span># Frame: Token Library Matrix</span>
+        </div>
+        <div class="frame-header" style="gap: 1rem;">
+          <div class="frame-title">Design Tokens Grid</div>
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <button class="figma-btn figma-btn-secondary" id="duplicate-group-main-btn" onclick="duplicateActiveGroup()" disabled style="opacity: 0.5; cursor: not-allowed;">
+              Duplicate Selected Group
+            </button>
+            <button class="figma-btn figma-btn-danger" id="delete-group-main-btn" onclick="deleteActiveGroup()" disabled style="opacity: 0.5; cursor: not-allowed; display: none;">
+              Delete Group
+            </button>
+            <button class="figma-btn" onclick="addNewTokenRow()">+ Add Token Row</button>
+          </div>
+        </div>
+        <div class="frame-body">
+          <div class="token-library-container" id="token-library-group-container">
+            <!-- Separate Group Tables rendered by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- FRAME 2: Component Showcase -->
+      <div class="figma-frame canvas-preview-frame" id="frame-component-preview">
+        <div class="frame-label">
+          <span>❖ Frame: Component Showcase</span>
+        </div>
+        <div class="frame-header">
+          <div class="frame-title">Live Preview Viewports</div>
+          <div class="preview-mode-tabs">
+            <button class="preview-mode-tab-btn active" id="btn-tab-editor" onclick="setPreviewTab('editor')">Editor View (Element Sandbox)</button>
+            <button class="preview-mode-tab-btn" id="btn-tab-producer" onclick="setPreviewTab('producer')">Producer View (Mockups)</button>
+          </div>
+        </div>
+        
+        <div class="frame-body" style="padding: 0;" id="showcase-content-body">
+          
+          <!-- TAB 1: Editor View (Element Sandbox Builder) -->
+          <div id="tab-content-editor" style="padding: 1.25rem;">
+            <div class="element-builder-sandbox">
+              <!-- Element parameters configuration panel -->
+              <div class="sandbox-builder-form">
+                <div class="form-group-comp">
+                  <label style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">Active Element</label>
+                  <select class="element-list-select" id="sandbox-element-selector" onchange="onSelectSandboxElement(this.value)">
+                    <!-- Options loaded by JS -->
+                  </select>
+                </div>
+                <div class="form-group-comp">
+                  <label style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">Label Text</label>
+                  <input type="text" class="input-comp" id="sandbox-element-text" value="Button text" oninput="onUpdateSandboxElement()" />
+                </div>
+                <div class="form-group-comp">
+                  <label style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">Shape Geometry</label>
+                  <select class="element-list-select" id="sandbox-element-shape" onchange="onUpdateSandboxElement()">
+                    <option value="rectangle">Rectangle</option>
+                    <option value="circle">Circle</option>
+                    <option value="pill">Pill</option>
+                    <option value="square">Square</option>
+                  </select>
+                </div>
+                <div class="form-group-comp">
+                  <label style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">Width / Height</label>
+                  <div style="display: flex; gap: 0.4rem; align-items: center;">
+                    <input type="number" class="input-comp" style="width: 50%;" id="sandbox-element-w" value="140" oninput="onUpdateSandboxElement()" placeholder="W" />
+                    <input type="number" class="input-comp" style="width: 50%;" id="sandbox-element-h" value="44" oninput="onUpdateSandboxElement()" placeholder="H" />
+                  </div>
+                </div>
+                
+                <!-- Binds properties to tokens -->
+                <div class="form-group-comp" style="border-top: 1px solid var(--border-figma); padding-top: 0.75rem; margin-top: 0.25rem;">
+                  <label style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--accent-figma);">Background Token Bind</label>
+                  <select class="element-list-select" id="sandbox-element-bg-bind" onchange="onUpdateSandboxElement()">
+                    <!-- Options loaded by JS -->
+                  </select>
+                </div>
+                <div class="form-group-comp">
+                  <label style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--accent-figma);">Text Color Token Bind</label>
+                  <select class="element-list-select" id="sandbox-element-text-bind" onchange="onUpdateSandboxElement()">
+                    <!-- Options loaded by JS -->
+                  </select>
+                </div>
+                <div class="form-group-comp">
+                  <label style="font-size: 0.7rem; font-weight: 700; text-transform: uppercase; color: var(--accent-figma);">Border Radius Token Bind</label>
+                  <select class="element-list-select" id="sandbox-element-radius-bind" onchange="onUpdateSandboxElement()">
+                    <!-- Options loaded by JS -->
+                  </select>
+                </div>
+                
+                <button class="figma-btn figma-btn-secondary btn-sm" style="margin-top: 0.5rem;" onclick="createNewSandboxElement()">+ Add New Element</button>
+              </div>
+
+              <!-- Rendering screen -->
+              <div class="sandbox-render-area" id="sandbox-renderer-container">
+                <div class="custom-shape-preview-box" id="sandbox-shape-preview-element">
+                  Element preview
+                </div>
+                <div class="sandbox-info-tag" id="sandbox-token-reference-label">Raw state - no token binds</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 2: Producer View (Standard ERP/SaaS Showcase) -->
+          <div id="tab-content-producer" style="display: none;">
+            <div class="theme-preview-wrapper theme-mode-light" id="preview-canvas-wrapper">
+              
+              <!-- Navbar sticker -->
+              <div class="preview-nav-comp">
+                <div class="nav-logo-group">
+                  <div class="nav-dot"></div>
+                  <span>Workspace Console</span>
+                </div>
+                <div class="nav-avatar">HM</div>
+              </div>
+
+              <!-- Product Card sticker -->
+              <div class="preview-card-comp">
+                <div class="comp-badge-group">
+                  <span class="comp-badge">New Launch</span>
+                </div>
+                <div class="preview-header-comp">
+                  <h4 class="preview-title">Unified Token Management</h4>
+                  <p class="preview-desc">This interactive sticker sheet renders live HTML elements that instantly inherit values updated in the Token Library Frame.</p>
+                </div>
+                <div class="preview-body-comp">
+                  <div class="form-group-comp">
+                    <label style="font-size: 0.7rem; font-weight: 600; text-transform: uppercase;">Workspace Identifier</label>
+                    <input type="text" class="input-comp" value="tweak-automation-slug" />
+                  </div>
+                  <div class="comp-button-row">
+                    <button class="comp-btn-secondary">Dismiss</button>
+                    <button class="comp-btn-primary">Apply Schema</button>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- FRAME 3: Export Center (Code & Profile Templates) -->
+      <div class="figma-frame canvas-code-frame" id="frame-export-center">
+        <div class="frame-label">
+          <span>⚏ Frame: Export Center</span>
+        </div>
+        <div class="frame-header">
+          <div class="frame-title">Code Generator</div>
+          <button class="figma-btn" onclick="copyActiveCode()">Copy Code</button>
+        </div>
+        <div class="frame-body">
+          <!-- Bulk Import/Paste Area -->
+          <div class="bulk-import-section">
+            <span style="font-size: 0.75rem; font-weight: 600;">Import / Merge CSS Variables</span>
+            <textarea class="bulk-import-textarea" id="bulk-import-input" placeholder="Paste CSS Variables: e.g.&#10;--preview-primary: #10b981;&#10;--preview-radius-card: 12px;"></textarea>
+            <button class="figma-btn figma-btn-secondary" style="padding: 0.25rem 0.5rem;" onclick="importCSSVariables()">Process & Import</button>
+          </div>
+
+          <!-- Code Profile tabs -->
+          <div class="code-tabs-row" id="code-tabs-container">
+            <!-- Rendered by JS -->
+          </div>
+
+          <!-- Generated block -->
+          <div class="code-editor-box" id="code-profile-output"></div>
+
+          <!-- Profile template edit area -->
+          <div class="template-card">
+            <span style="font-size: 0.75rem; font-weight: 600;">Edit Profile Template</span>
+            <textarea class="template-box" id="code-template-input" oninput="onTemplateInputChange()"></textarea>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Dynamic CSS Variables Generator target (Style tag to dynamically rewrite preview styles) -->
+  <style id="dynamic-vars-compiler"></style>
+
+  <!-- Toast popup notification -->
+  <div class="toast" id="toast-notify">Copied to clipboard!</div>
+
+  <!-- ==========================================================================
+       7. Logic Engine
+       ========================================================================== */
+  <script>
+    // In-memory Pantone Lookup Dictionary
+    let pantoneDatabase = {};
+
+    // fallback mapping of popular pantone colors
+    const FALLBACK_PANTONE = {
+      "egret": { "code": "11-0103", "hex": "f3ece0" },
+      "snow-white": { "code": "11-0602", "hex": "f2f0eb" },
+      "bright-white": { "code": "11-0601", "hex": "f4f5f0" },
+      "cloud-dancer": { "code": "11-4201", "hex": "f0eee9" },
+      "flame-scarlet": { "code": "18-1662", "hex": "cd212a" },
+      "classic-blue": { "code": "19-4052", "hex": "0f4c81" },
+      "ultimate-gray": { "code": "17-5104", "hex": "939597" },
+      "illuminating": { "code": "13-0647", "hex": "f5df4d" },
+      "ultra-violet": { "code": "18-3838", "hex": "5f4b8b" },
+      "serenity": { "code": "15-3919", "hex": "91a8d0" },
+      "rose-quartz": { "code": "13-1520", "hex": "f2cfc2" },
+      "marsala": { "code": "18-1438", "hex": "955251" },
+      "radiant-orchid": { "code": "18-3224", "hex": "b163a3" },
+      "emerald": { "code": "17-5641", "hex": "009473" },
+      "tangerine-tango": { "code": "17-1463", "hex": "dd4124" },
+      "honeysuckle": { "code": "18-2120", "hex": "d94f70" },
+      "turquoise": { "code": "15-5519", "hex": "45b5aa" },
+      "mimosa": { "code": "14-0848", "hex": "f0c05a" },
+      "blue-iris": { "code": "18-3943", "hex": "5a5b9f" },
+      "chili-pepper": { "code": "19-1557", "hex": "9b1b30" },
+      "sand-dollar": { "code": "13-1106", "hex": "decdbe" },
+      "blue-turquoise": { "code": "15-5217", "hex": "53b0ae" },
+      "tigerlily": { "code": "17-1456", "hex": "e2583e" },
+      "true-red": { "code": "19-1664", "hex": "bf1932" },
+      "cerulean": { "code": "15-4020", "hex": "9bb7d4" },
+      "fuchsia-rose": { "code": "17-2031", "hex": "c74375" }
+    };
+
+    // Initial configuration of design tokens
+    const DEFAULT_TOKENS = [
+      // Colors Group
+      { key: "canvas-bg", label: "Preview Canvas Background", type: "color", group: "Colors", value: { light: "#f3f4f6", dark: "#0f172a" } },
+      { key: "card-bg", label: "Card Background Surface", type: "color", group: "Colors", value: { light: "#ffffff", dark: "#1e293b" } },
+      { key: "card-foreground", label: "Card Core Text Color", type: "color", group: "Colors", value: { light: "#1e293b", dark: "#f3f4f6" } },
+      { key: "muted-foreground", label: "Subtext / Muted Details", type: "color", group: "Colors", value: { light: "#64748b", dark: "#94a3b8" } },
+      { key: "primary", label: "Primary Theme Action", type: "color", group: "Colors", value: { light: "classic-blue", dark: "illuminating" } },
+      { key: "primary-foreground", label: "Primary Action Text Color", type: "color", group: "Colors", value: { light: "#ffffff", dark: "#0f172a" } },
+      { key: "secondary", label: "Secondary Button Color", type: "color", group: "Colors", value: { light: "snow-white", dark: "#334155" } },
+      { key: "secondary-foreground", label: "Secondary Action Text Color", type: "color", group: "Colors", value: { light: "#1f2937", dark: "#f3f4f6" } },
+      { key: "card-border", label: "Component Outline Color", type: "color", group: "Colors", value: { light: "#e2e8f0", dark: "#334155" } },
+      { key: "input-bg", label: "Input Fields Interior", type: "color", group: "Colors", value: { light: "#f8fafc", dark: "#0f172a" } },
+      { key: "ring", label: "Active Input Outline Ring", type: "color", group: "Colors", value: { light: "#3b82f6", dark: "#60a5fa" } },
+      // Layout Dimensions Group
+      { key: "card-radius", label: "Card Corners", type: "dimension", group: "Borders", min: 0, max: 40, step: 1, unit: "px", value: { light: "16px", dark: "16px" } },
+      { key: "button-radius", label: "Buttons Corners", type: "dimension", group: "Borders", min: 0, max: 20, step: 1, unit: "px", value: { light: "8px", dark: "8px" } },
+      { key: "input-radius", label: "Input Corners", type: "dimension", group: "Borders", min: 0, max: 20, step: 1, unit: "px", value: { light: "6px", dark: "6px" } },
+      { key: "letter-spacing", label: "Heading Tracking Space", type: "dimension", group: "Borders", min: -0.05, max: 0.15, step: 0.01, unit: "em", value: { light: "-0.02em", dark: "-0.02em" } },
+      // Fonts Group
+      { key: "font-sans", label: "Base Font Typography", type: "font", group: "Typography", value: { light: "Inter, sans-serif", dark: "Inter, sans-serif" } }
+    ];
+
+    // Core Custom Elements sandbox data schema (Editor View)
+    let customElements = [
+      {
+        id: "el-button",
+        name: "CTA Button",
+        shape: "rectangle",
+        w: 160,
+        h: 46,
+        text: "Submit Form",
+        bgBind: "primary",
+        textBind: "primary-foreground",
+        radiusBind: "button-radius",
+        rawBg: "#4f46e5",
+        rawText: "#ffffff",
+        rawRadius: "8px"
+      },
+      {
+        id: "el-card",
+        name: "Info Card Surface",
+        shape: "square",
+        w: 240,
+        h: 120,
+        text: "Status Active",
+        bgBind: "card-bg",
+        textBind: "card-foreground",
+        radiusBind: "card-radius",
+        rawBg: "#1f2937",
+        rawText: "#f9fafb",
+        rawRadius: "12px"
+      },
+      {
+        id: "el-badge",
+        name: "Pill Tag",
+        shape: "pill",
+        w: 90,
+        h: 28,
+        text: "Popular",
+        bgBind: "secondary",
+        textBind: "secondary-foreground",
+        radiusBind: "button-radius",
+        rawBg: "#e5e7eb",
+        rawText: "#1f2937",
+        rawRadius: "20px"
+      }
+    ];
+
+    let selectedElementId = "el-button";
+
+    // Main App States
+    let tokens = [];
+    let currentMode = "light";
+    let activeProfileId = "css-vars";
+    let activePreviewTab = "editor"; // "editor" or "producer"
+    let selectedGroupName = null; // Currently clicked token group card for selection & duplication
+
+    // Supported Code Generator Profiles
+    const CODE_PROFILES = [
+      {
+        id: "css-vars",
+        name: "CSS Variables",
+        filename: "variables.css",
+        template: `:root {\n{{#each colors}}\n  --{{key}}: {{lightValue}};\n{{/each}}\n{{#each dimensions}}\n  --{{key}}: {{lightValue}};\n{{/each}}\n{{#each fonts}}\n  --{{key}}: {{lightValue}};\n{{/each}}\n}\n\n.dark {\n{{#each colors}}\n  --{{key}}: {{darkValue}};\n{{/each}}\n{{#each dimensions}}\n  --{{key}}: {{darkValue}};\n{{/each}}\n{{#each fonts}}\n  --{{key}}: {{darkValue}};\n{{/each}}\n}`
+      },
+      {
+        id: "scss",
+        name: "Sass (SCSS)",
+        filename: "_theme.scss",
+        template: `// Pantone & Hex tokens mapped dynamically\n$theme-mode: "{{currentMode}}";\n\n{{#each colors}}\n\n\${{key}}: {{activeValue}};\n{{/each}}\n\n{{#each dimensions}}\n\n\${{key}}: {{activeValue}};\n{{/each}}\n\n{{#each fonts}}\n\n\${{key}}: {{activeValue}};\n{{/each}}`
+      },
+      {
+        id: "tailwind",
+        name: "Tailwind Config",
+        filename: "tailwind.config.js",
+        template: `module.exports = {\n  theme: {\n    extend: {\n      colors: {\n{{#each colors}}\n        "{{key}}": "{{activeValue}}",\n{{/each}}\n      },\n      borderRadius: {\n{{#each dimensions}}\n        "{{key}}": "{{activeValue}}",\n{{/each}}\n      }\n    }\n  }\n}`
+      },
+      {
+        id: "swiftui",
+        name: "SwiftUI Color Assets",
+        filename: "Color+Theme.swift",
+        template: `import SwiftUI\n\nextension Color {\n    struct Theme {\n        {{#each colors}}\n        static let {{camelCase key}} = Color("{{key}}")\n        {{/each}}\n    }\n}`
+      }
+    ];
+
+    // ==========================================================================
+    // Lifecycle Initialization
+    // ==========================================================================
+    window.addEventListener("DOMContentLoaded", async () => {
+      await loadPantoneData();
+      resetDefaultTokens();
+      
+      // Setup window keyboard shortcuts (e.g. Ctrl+D to duplicate group)
+      window.addEventListener("keydown", (e) => {
+        if (e.ctrlKey && e.key.toLowerCase() === 'd') {
+          e.preventDefault();
+          duplicateActiveGroup();
+        }
+      });
+    });
+
+    // Tries to pull raw database locally, falls back seamlessly
+    async function loadPantoneData() {
+      try {
+        const res = await fetch('./pantone-colors-master/pantone-numbers.json');
+        if (!res.ok) throw new Error("File not found");
+        const data = await res.json();
+        
+        pantoneDatabase = {};
+        for (const [code, info] of Object.entries(data)) {
+          const nameKey = info.name.toLowerCase().replace(/\s+/g, '-');
+          const cleanHex = info.hex.startsWith('#') ? info.hex : `#${info.hex}`;
+          pantoneDatabase[code] = { name: info.name, hex: cleanHex };
+          pantoneDatabase[nameKey] = { name: info.name, code: code, hex: cleanHex };
+          pantoneDatabase[`pantone-${nameKey}`] = { name: info.name, code: code, hex: cleanHex };
+        }
+        console.log(`Successfully loaded ${Object.keys(pantoneDatabase).length} Pantone dictionary links!`);
+      } catch (e) {
+        console.warn("Failed local load. Utilizing fallback Pantone set.", e);
+        pantoneDatabase = {};
+        for (const [name, info] of Object.entries(FALLBACK_PANTONE)) {
+          const cleanHex = info.hex.startsWith('#') ? info.hex : `#${info.hex}`;
+          pantoneDatabase[info.code] = { name: name, hex: cleanHex };
+          pantoneDatabase[name] = { name: name, code: info.code, hex: cleanHex };
+          pantoneDatabase[`pantone-${name}`] = { name: name, code: info.code, hex: cleanHex };
+        }
+      }
+    }
+
+    function resetDefaultTokens() {
+      tokens = JSON.parse(JSON.stringify(DEFAULT_TOKENS));
+      selectedGroupName = null;
+      renderWorkspace();
+    }
+
+    function renderWorkspace() {
+      renderTokenLibraryGroups();
+      renderSidebarLayersSublist();
+      updatePreviewComponentCSS();
+      renderProfileTabs();
+      generateCodeOutput();
+      populateSandboxSelectors();
+      renderSandboxPreview();
+    }
+
+    // ==========================================================================
+    // Render: Token Matrix Library Card Blocks (Multiple distinct tables)
+    // ==========================================================================
+    function renderTokenLibraryGroups() {
+      const container = document.getElementById("token-library-group-container");
+      container.innerHTML = "";
+
+      // Gather distinct groups present in tokens list
+      const groups = [...new Set(tokens.map(t => t.group))];
+
+      if (groups.length === 0) {
+        container.innerHTML = `<div style="padding: 2rem; text-align: center; color: var(--text-figma-muted);">No tokens defined yet. Add rows or import variables to get started.</div>`;
+        return;
+      }
+
+      groups.forEach((groupName) => {
+        const groupTokens = tokens.filter(t => t.group === groupName);
+        const card = document.createElement("div");
+        const isSelected = selectedGroupName === groupName;
+        
+        card.className = `token-group-card ${isSelected ? 'selected' : ''}`;
+        card.onclick = (e) => {
+          // Avoid click handler bubble if clicking elements inside card
+          if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.closest('button')) {
+            return;
+          }
+          selectGroup(groupName);
+        };
+
+        // Table headers and items setup
+        let rowsHtml = "";
+        groupTokens.forEach(token => {
+          const tIndex = tokens.findIndex(t => t.key === token.key);
+          
+          let visualIndicatorCell = "";
+          if (token.type === "color") {
+            const hexLight = resolveToHex(token.value.light);
+            const hexDark = resolveToHex(token.value.dark);
+            const activeHex = currentMode === "light" ? hexLight : hexDark;
+            visualIndicatorCell = `
+              <div class="cell-swatch-box" style="background-color: ${activeHex};" id="swatch-indicator-${token.key}"></div>
+            `;
+          } else if (token.type === "dimension") {
+            visualIndicatorCell = `<div class="visual-indicator-bar" style="width: ${Math.min(parseFloat(token.value[currentMode]) * 2, 45) || 5}px;"></div>`;
+          } else if (token.type === "font") {
+            visualIndicatorCell = `<span style="font-family: ${token.value[currentMode]}; font-weight: bold; margin-right: 0.4rem;">Aa</span>`;
+          }
+
+          rowsHtml += `
+            <tr class="token-row" id="token-row-${token.key}">
+              <td>
+                <div class="token-meta-cell">
+                  <div class="flex-center-y">
+                    ${visualIndicatorCell}
+                    <span class="token-name-label">${token.label}</span>
+                  </div>
+                  <span class="token-key-label">--${token.key}</span>
+                </div>
+              </td>
+              <td>
+                ${createAutocompleteInput(token.key, "light", token.value.light, token.type)}
+              </td>
+              <td>
+                ${createAutocompleteInput(token.key, "dark", token.value.dark, token.type)}
+              </td>
+              <td style="text-align: center;">
+                <div style="display: flex; gap: 4px; justify-content: center;">
+                  <button class="row-copy-btn" onclick="copyTokenRowKey('${token.key}')" title="Copy Token Variable">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+                  </button>
+                  <button class="row-copy-btn" onclick="deleteTokenRow('${token.key}')" title="Delete Token Row" style="color: var(--danger);">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        });
+
+        card.innerHTML = `
+          <div class="token-group-selection-indicator">Group Frame: Selected</div>
+          <div class="token-group-card-header">
+            <span class="token-group-card-title">${groupName}</span>
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="figma-btn figma-btn-secondary btn-sm" onclick="copyGroupAsJSON('${groupName}')" title="Copy Group Config JSON">
+                Copy JSON
+              </button>
+              <button class="figma-btn figma-btn-secondary btn-sm" onclick="duplicateGroup('${groupName}')" title="Duplicate Group">
+                Duplicate
+              </button>
+            </div>
+          </div>
+          <div style="padding: 0.75rem;">
+            <table class="token-grid-table">
+              <thead>
+                <tr>
+                  <th width="35%">Token Name & Key</th>
+                  <th width="28%">Light Value</th>
+                  <th width="28%">Dark Value</th>
+                  <th width="9%" style="text-align: center;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsHtml}
+              </tbody>
+            </table>
+          </div>
+        `;
+        
+        container.appendChild(card);
+
+        // Bind handlers to every autocomplete input in the newly drawn table card
+        groupTokens.forEach(token => {
+          const tIndex = tokens.findIndex(t => t.key === token.key);
+          setupAutocompleteListeners(token.key, "light", tIndex);
+          setupAutocompleteListeners(token.key, "dark", tIndex);
+        });
+      });
+
+      // Update Top Frame Duplicate Header buttons status
+      const duplicateBtn = document.getElementById("duplicate-group-main-btn");
+      const deleteBtn = document.getElementById("delete-group-main-btn");
+      if (selectedGroupName) {
+        duplicateBtn.disabled = false;
+        duplicateBtn.style.opacity = "1";
+        duplicateBtn.style.cursor = "pointer";
+        
+        deleteBtn.disabled = false;
+        deleteBtn.style.opacity = "1";
+        deleteBtn.style.cursor = "pointer";
+        deleteBtn.style.display = "inline-flex";
+      } else {
+        duplicateBtn.disabled = true;
+        duplicateBtn.style.opacity = "0.5";
+        duplicateBtn.style.cursor = "not-allowed";
+        
+        deleteBtn.disabled = true;
+        deleteBtn.style.opacity = "0.5";
+        deleteBtn.style.cursor = "not-allowed";
+        deleteBtn.style.display = "none";
+      }
+    }
+
+    // Left Sidebar layer tokens navigation updates
+    function renderSidebarLayersSublist() {
+      const container = document.getElementById("layers-tokens-sublist");
+      container.innerHTML = `<div class="sidebar-section-title">Token Groups</div>`;
+      
+      const groups = [...new Set(tokens.map(t => t.group))];
+      groups.forEach(groupName => {
+        const item = document.createElement("div");
+        const isSelected = selectedGroupName === groupName;
+        item.className = `layer-item ${isSelected ? 'active' : ''}`;
+        item.onclick = () => selectGroup(groupName);
+        item.innerHTML = `
+          <div class="layer-icon">⚃</div>
+          <span>${groupName}</span>
+        `;
+        container.appendChild(item);
+      });
+    }
+
+    // Selects token category block/table
+    function selectGroup(groupName) {
+      selectedGroupName = groupName;
+      
+      // Update selected states in DOM
+      renderTokenLibraryGroups();
+      renderSidebarLayersSublist();
+      
+      // Auto scroll viewport slightly to focus on selection card
+      const cards = document.querySelectorAll(".token-group-card");
+      cards.forEach(card => {
+        const title = card.querySelector(".token-group-card-title").innerText;
+        if (title === groupName) {
+          card.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+        }
+      });
+    }
+
+    // Duplicates selected category card with unique suffix keys
+    function duplicateActiveGroup() {
+      if (selectedGroupName) {
+        duplicateGroup(selectedGroupName);
+      }
+    }
+
+    function duplicateGroup(groupName) {
+      const newGroupName = `${groupName} Copy`;
+      const groupTokens = tokens.filter(t => t.group === groupName);
+
+      if (groupTokens.length === 0) return;
+
+      groupTokens.forEach((t) => {
+        // Calculate key copy suffix uniqueness
+        let newKey = `${t.key}-copy`;
+        let counter = 1;
+        while (tokens.some(tok => tok.key === newKey)) {
+          newKey = `${t.key}-copy-${counter}`;
+          counter++;
+        }
+
+        const duplicatedToken = {
+          ...t,
+          key: newKey,
+          label: `${t.label} Copy`,
+          group: newGroupName,
+          value: {
+            light: t.value.light,
+            dark: t.value.dark
+          }
+        };
+        tokens.push(duplicatedToken);
+      });
+
+      // Highlight the duplicated group
+      selectedGroupName = newGroupName;
+      renderWorkspace();
+      showToast(`Duplicated group "${groupName}" → "${newGroupName}"!`);
+    }
+
+    // Deletes selected group
+    function deleteActiveGroup() {
+      if (!selectedGroupName) return;
+      if (!confirm(`Are you sure you want to delete the token group "${selectedGroupName}"?`)) return;
+
+      const deletedGroup = selectedGroupName;
+      tokens = tokens.filter(t => t.group !== selectedGroupName);
+      selectedGroupName = null;
+      renderWorkspace();
+      showToast(`Deleted token group "${deletedGroup}"`);
+    }
+
+    // Helper: builds standard autocompleting component
+    function createAutocompleteInput(tokenKey, mode, val, type) {
+      if (type !== "color") {
+        return `
+          <div class="autocomplete-wrapper">
+            <input type="text" class="autocomplete-input" value="${val}" id="input-${tokenKey}-${mode}" />
+          </div>
+        `;
+      }
+
+      const isPantone = checkIsPantone(val);
+      const hexValue = resolveToHex(val);
+      const pantoneBadge = isPantone ? `
+        <div class="pantone-badge" id="pantone-badge-${tokenKey}-${mode}">
+          <span style="display:inline-block; width:6px; height:6px; background-color:${hexValue}; border-radius:1px;"></span>
+          <span>Matched Pantone</span>
+        </div>
+      ` : `<div class="pantone-badge" id="pantone-badge-${tokenKey}-${mode}" style="display:none;"></div>`;
+
+      return `
+        <div style="display: flex; flex-direction: column;">
+          <div class="autocomplete-wrapper">
+            <input type="text" class="autocomplete-input" value="${val}" id="input-${tokenKey}-${mode}" placeholder="Type color..." autocomplete="off" />
+            <span class="autocomplete-suggestion" id="suggest-${tokenKey}-${mode}"></span>
+          </div>
+          ${pantoneBadge}
+        </div>
+      `;
+    }
+
+    // Autocomplete events registration
+    function setupAutocompleteListeners(tokenKey, mode, tIndex) {
+      const input = document.getElementById(`input-${tokenKey}-${mode}`);
+      const suggest = document.getElementById(`suggest-${tokenKey}-${mode}`);
+      const badge = document.getElementById(`pantone-badge-${tokenKey}-${mode}`);
+      const swatch = document.getElementById(`swatch-indicator-${tokenKey}`);
+      const token = tokens[tIndex];
+
+      if (!input) return;
+
+      const updateValue = (newVal) => {
+        token.value[mode] = newVal;
+        updatePreviewComponentCSS();
+        generateCodeOutput();
+        renderSandboxPreview(); // Also refresh the element sandbox rendering!
+
+        if (swatch && mode === currentMode) {
+          const resolved = resolveToHex(newVal);
+          if (token.type === "color") {
+            swatch.style.backgroundColor = resolved;
+          }
+        }
+
+        if (badge) {
+          if (checkIsPantone(newVal)) {
+            const hex = resolveToHex(newVal);
+            badge.innerHTML = `<span style="display:inline-block; width:6px; height:6px; background-color:${hex}; border-radius:1px;"></span><span>Matched Pantone</span>`;
+            badge.style.display = "inline-flex";
+          } else {
+            badge.style.display = "none";
+          }
+        }
+      };
+
+      input.addEventListener("input", (e) => {
+        const val = e.target.value;
+        updateValue(val);
+
+        if (token.type !== "color") return;
+
+        const suggestion = getPantoneSuggestion(val);
+        if (suggestion && val.trim().length > 1) {
+          const inputTypedLength = val.length;
+          
+          if (suggestion.name.toLowerCase().startsWith(val.toLowerCase())) {
+            const remainingSuffix = suggestion.name.slice(inputTypedLength);
+            suggest.innerHTML = `<span style="opacity:0;">${val}</span>${remainingSuffix} <span style="font-size:0.65rem; color:#475569;">(${suggestion.hex})</span>`;
+            input.dataset.suggestionVal = suggestion.name;
+          } else {
+            suggest.innerHTML = "";
+            delete input.dataset.suggestionVal;
+          }
+        } else {
+          suggest.innerHTML = "";
+          delete input.dataset.suggestionVal;
+        }
+      });
+
+      input.addEventListener("keydown", (e) => {
+        if ((e.key === "Tab" || e.key === "Enter" || e.key === "ArrowRight") && input.dataset.suggestionVal) {
+          e.preventDefault();
+          const acceptedVal = input.dataset.suggestionVal;
+          input.value = acceptedVal;
+          suggest.innerHTML = "";
+          delete input.dataset.suggestionVal;
+          updateValue(acceptedVal);
+        }
+        if (e.key === "Escape") {
+          suggest.innerHTML = "";
+          delete input.dataset.suggestionVal;
+        }
+      });
+
+      input.addEventListener("blur", () => {
+        setTimeout(() => {
+          if (suggest) suggest.innerHTML = "";
+        }, 150);
+      });
+    }
+
+    // Matches typed value in Pantone keys
+    function getPantoneSuggestion(typed) {
+      if (!typed) return null;
+      const cleanTyped = typed.toLowerCase().replace(/\s+/g, '-');
+      
+      const keys = Object.keys(pantoneDatabase);
+      const matchKey = keys.find(k => k.startsWith(cleanTyped));
+      
+      if (matchKey) {
+        const matchObj = pantoneDatabase[matchKey];
+        return {
+          name: matchKey,
+          hex: `#${matchObj.hex || matchObj}`
+        };
+      }
+      return null;
+    }
+
+    function checkIsPantone(val) {
+      if (!val) return false;
+      const clean = val.trim().toLowerCase().replace(/\s+/g, '-');
+      return !!pantoneDatabase[clean];
+    }
+
+    // Resolves hex color dynamically
+    function resolveToHex(val) {
+      if (!val) return "#000000";
+      const clean = val.trim().toLowerCase().replace(/\s+/g, '-');
+      
+      if (pantoneDatabase[clean]) {
+        return pantoneDatabase[clean].hex;
+      }
+      return val;
+    }
+
+    // ==========================================================================
+    // Render: Component Showcase Layout Manager (Tab management)
+    // ==========================================================================
+    function setPreviewTab(tabId) {
+      activePreviewTab = tabId;
+      document.getElementById("btn-tab-editor").classList.toggle("active", tabId === "editor");
+      document.getElementById("btn-tab-producer").classList.toggle("active", tabId === "producer");
+      
+      document.getElementById("tab-content-editor").style.display = tabId === "editor" ? "block" : "none";
+      document.getElementById("tab-content-producer").style.display = tabId === "producer" ? "block" : "none";
+      
+      renderWorkspace();
+    }
+
+    // ==========================================================================
+    // Render: Component Showcase Styling compilation
+    // ==========================================================================
+    function updatePreviewComponentCSS() {
+      const styleTag = document.getElementById("dynamic-vars-compiler");
+      let cssRules = `#preview-canvas-wrapper {\n`;
+      
+      tokens.forEach(token => {
+        const rawValue = token.value[currentMode];
+        const resolvedValue = token.type === "color" ? resolveToHex(rawValue) : rawValue;
+        
+        cssRules += `  --theme-preview-${token.key}: ${resolvedValue};\n`;
+      });
+      
+      cssRules += `}\n`;
+      
+      // Inject mappings to actual component styles
+      cssRules += `
+        #preview-canvas-wrapper {
+          --theme-preview-canvas-bg: var(--theme-preview-canvas-bg);
+          font-family: var(--theme-preview-font-sans), sans-serif;
+        }
+        .preview-card-comp {
+          background-color: var(--theme-preview-card-bg);
+          border-color: var(--theme-preview-card-border);
+          border-radius: var(--theme-preview-card-radius);
+          color: var(--theme-preview-card-foreground);
+        }
+        .preview-desc {
+          color: var(--theme-preview-muted-foreground);
+        }
+        .input-comp {
+          background-color: var(--theme-preview-input-bg);
+          border-color: var(--theme-preview-card-border);
+          border-radius: var(--theme-preview-input-radius);
+          color: var(--theme-preview-card-foreground);
+        }
+        .input-comp:focus {
+          border-color: var(--theme-preview-ring);
+        }
+        .comp-btn-primary {
+          background-color: var(--theme-preview-primary);
+          color: var(--theme-preview-primary-foreground);
+          border-radius: var(--theme-preview-button-radius);
+        }
+        .comp-btn-secondary {
+          background-color: var(--theme-preview-secondary);
+          color: var(--theme-preview-secondary-foreground);
+          border-radius: var(--theme-preview-button-radius);
+          border-color: var(--theme-preview-card-border);
+        }
+        .preview-nav-comp {
+          background-color: var(--theme-preview-card-bg);
+          border-color: var(--theme-preview-card-border);
+          border-radius: var(--theme-preview-card-radius);
+          color: var(--theme-preview-card-foreground);
+        }
+        .nav-dot {
+          background-color: var(--theme-preview-primary);
+        }
+        .nav-avatar {
+          background-color: var(--theme-preview-secondary);
+          color: var(--theme-preview-secondary-foreground);
+          border-color: var(--theme-preview-card-border);
+        }
+        .comp-badge {
+          background-color: rgba(12, 140, 233, 0.1);
+          color: var(--theme-preview-primary);
+          border-color: rgba(12, 140, 233, 0.2);
+        }
+      `;
+
+      styleTag.innerHTML = cssRules;
+    }
+
+    // ==========================================================================
+    // Render: Core Element Builder Sandbox Engine (Editor View tab)
+    // ==========================================================================
+    
+    function populateSandboxSelectors() {
+      const selector = document.getElementById("sandbox-element-selector");
+      const currentSelected = selector.value || selectedElementId;
+      selector.innerHTML = "";
+
+      customElements.forEach(el => {
+        const option = document.createElement("option");
+        option.value = el.id;
+        option.text = el.name;
+        if (el.id === currentSelected) {
+          option.selected = true;
+        }
+        selector.appendChild(option);
+      });
+
+      // Bind bindings selection menus
+      const colorTokens = tokens.filter(t => t.type === "color");
+      const radiusTokens = tokens.filter(t => t.type === "dimension");
+
+      const bgSelector = document.getElementById("sandbox-element-bg-bind");
+      const textSelector = document.getElementById("sandbox-element-text-bind");
+      const radiusSelector = document.getElementById("sandbox-element-radius-bind");
+
+      const prevBg = bgSelector.value;
+      const prevText = textSelector.value;
+      const prevRadius = radiusSelector.value;
+
+      bgSelector.innerHTML = `<option value="none">None (Use Raw Background)</option>`;
+      textSelector.innerHTML = `<option value="none">None (Use Raw Text Color)</option>`;
+      radiusSelector.innerHTML = `<option value="none">None (Use Raw Radius)</option>`;
+
+      colorTokens.forEach(t => {
+        bgSelector.innerHTML += `<option value="${t.key}">--${t.key} (${t.value[currentMode]})</option>`;
+        textSelector.innerHTML += `<option value="${t.key}">--${t.key} (${t.value[currentMode]})</option>`;
+      });
+
+      radiusTokens.forEach(t => {
+        radiusSelector.innerHTML += `<option value="${t.key}">--${t.key} (${t.value[currentMode]})</option>`;
+      });
+
+      // Restore values
+      bgSelector.value = prevBg || "none";
+      textSelector.value = prevText || "none";
+      radiusSelector.value = prevRadius || "none";
+    }
+
+    // Renders the element based on token binding or falls back to "raw state"
+    function renderSandboxPreview() {
+      const el = customElements.find(e => e.id === selectedElementId);
+      const preview = document.getElementById("sandbox-shape-preview-element");
+      const label = document.getElementById("sandbox-token-reference-label");
+
+      if (!el) return;
+
+      // Compile design style attributes
+      let bg = el.rawBg;
+      let text = el.rawText;
+      let radius = el.rawRadius;
+
+      let debugString = "Showing raw state parameters (no token bindings)";
+
+      // Background bind resolution
+      if (el.bgBind && el.bgBind !== "none") {
+        const tok = tokens.find(t => t.key === el.bgBind);
+        if (tok) {
+          bg = resolveToHex(tok.value[currentMode]);
+          debugString = `Background: bound to --${el.bgBind}`;
+        }
+      }
+      
+      // Text bind resolution
+      if (el.textBind && el.textBind !== "none") {
+        const tok = tokens.find(t => t.key === el.textBind);
+        if (tok) {
+          text = resolveToHex(tok.value[currentMode]);
+          debugString += ` | Text: bound to --${el.textBind}`;
+        }
+      }
+
+      // Radius bind resolution
+      if (el.radiusBind && el.radiusBind !== "none") {
+        const tok = tokens.find(t => t.key === el.radiusBind);
+        if (tok) {
+          radius = tok.value[currentMode];
+          debugString += ` | Radius: bound to --${el.radiusBind}`;
+        }
+      }
+
+      // Apply dimensions
+      preview.style.width = `${el.w}px`;
+      preview.style.height = `${el.h}px`;
+      preview.style.backgroundColor = bg;
+      preview.style.color = text;
+      
+      // Render text
+      preview.innerText = el.text;
+
+      // Handle Shapes geometries
+      if (el.shape === "circle") {
+        preview.style.borderRadius = "50%";
+        // Make equal width/height for circle
+        preview.style.height = `${el.w}px`;
+      } else if (el.shape === "pill") {
+        preview.style.borderRadius = "9999px";
+      } else if (el.shape === "square") {
+        preview.style.borderRadius = "0";
+      } else {
+        // Rectangle: use border radius bind
+        preview.style.borderRadius = radius;
+      }
+
+      label.innerText = debugString;
+    }
+
+    // Handles element selection change
+    function onSelectSandboxElement(elId) {
+      selectedElementId = elId;
+      const el = customElements.find(e => e.id === elId);
+      if (!el) return;
+
+      // Populate builder form elements
+      document.getElementById("sandbox-element-text").value = el.text;
+      document.getElementById("sandbox-element-shape").value = el.shape;
+      document.getElementById("sandbox-element-w").value = el.w;
+      document.getElementById("sandbox-element-h").value = el.h;
+      document.getElementById("sandbox-element-bg-bind").value = el.bgBind || "none";
+      document.getElementById("sandbox-element-text-bind").value = el.textBind || "none";
+      document.getElementById("sandbox-element-radius-bind").value = el.radiusBind || "none";
+
+      renderSandboxPreview();
+    }
+
+    // Triggers when form items inside sandbox are modified
+    function onUpdateSandboxElement() {
+      const el = customElements.find(e => e.id === selectedElementId);
+      if (!el) return;
+
+      el.text = document.getElementById("sandbox-element-text").value;
+      el.shape = document.getElementById("sandbox-element-shape").value;
+      el.w = parseInt(document.getElementById("sandbox-element-w").value) || 100;
+      el.h = parseInt(document.getElementById("sandbox-element-h").value) || 40;
+      el.bgBind = document.getElementById("sandbox-element-bg-bind").value;
+      el.textBind = document.getElementById("sandbox-element-text-bind").value;
+      el.radiusBind = document.getElementById("sandbox-element-radius-bind").value;
+
+      renderSandboxPreview();
+    }
+
+    // Creates new custom designed element sticker row
+    function createNewSandboxElement() {
+      const name = prompt("Enter Custom Element Name:", "Primary Pill Badge");
+      if (!name) return;
+
+      const rawId = "el-" + name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+      if (customElements.some(e => e.id === rawId)) {
+        alert("An element with this name already exists!");
+        return;
+      }
+
+      const newEl = {
+        id: rawId,
+        name: name,
+        shape: "rectangle",
+        w: 120,
+        h: 40,
+        text: "Label Text",
+        bgBind: "none",
+        textBind: "none",
+        radiusBind: "none",
+        rawBg: "#475569",
+        rawText: "#ffffff",
+        rawRadius: "4px"
+      };
+
+      customElements.push(newEl);
+      selectedElementId = rawId;
+      
+      populateSandboxSelectors();
+      onSelectSandboxElement(rawId);
+      showToast(`Added custom element "${name}" to Builder!`);
+    }
+
+    // ==========================================================================
+    // Render: Export Tabs & Pluggable Compiler
+    // ==========================================================================
+    function renderProfileTabs() {
+      const container = document.getElementById("code-tabs-container");
+      container.innerHTML = "";
+
+      CODE_PROFILES.forEach(profile => {
+        const tab = document.createElement("button");
+        tab.className = `code-tab-btn ${profile.id === activeProfileId ? "active" : ""}`;
+        tab.innerText = `${profile.name} (${profile.filename})`;
+        tab.onclick = () => selectProfile(profile.id);
+        container.appendChild(tab);
+      });
+    }
+
+    function selectProfile(profileId) {
+      activeProfileId = profileId;
+      renderProfileTabs();
+      generateCodeOutput();
+    }
+
+    function onTemplateInputChange() {
+      const profile = CODE_PROFILES.find(p => p.id === activeProfileId);
+      if (!profile) return;
+      
+      const input = document.getElementById("code-template-input");
+      profile.template = input.value;
+      generateCodeOutput();
+    }
+
+    // Evaluates templates against token list context
+    function generateCodeOutput() {
+      const profile = CODE_PROFILES.find(p => p.id === activeProfileId);
+      if (!profile) return;
+
+      const templateInput = document.getElementById("code-template-input");
+      if (document.activeElement !== templateInput) {
+        templateInput.value = profile.template;
+      }
+
+      const colors = tokens.filter(t => t.type === "color").map(t => ({
+        key: t.key,
+        lightValue: t.value.light,
+        darkValue: t.value.dark,
+        lightHex: resolveToHex(t.value.light),
+        darkHex: resolveToHex(t.value.dark),
+        activeValue: t.value[currentMode],
+        activeHex: resolveToHex(t.value[currentMode])
+      }));
+
+      const dimensions = tokens.filter(t => t.type === "dimension").map(t => ({
+        key: t.key,
+        lightValue: t.value.light,
+        darkValue: t.value.dark,
+        activeValue: t.value[currentMode]
+      }));
+
+      const fonts = tokens.filter(t => t.type === "font").map(t => ({
+        key: t.key,
+        lightValue: t.value.light,
+        darkValue: t.value.dark,
+        activeValue: t.value[currentMode]
+      }));
+
+      const context = {
+        currentMode: currentMode,
+        themeMode: currentMode.toUpperCase(),
+        colors: colors,
+        dimensions: dimensions,
+        fonts: fonts
+      };
+
+      const compiled = compileFigmaTemplate(profile.template, context);
+      document.getElementById("code-profile-output").textContent = compiled;
+    }
+
+    // Handles variable compilation + clean formatting
+    function compileFigmaTemplate(template, context) {
+      let output = template;
+      
+      output = output.replace(/\{\{currentMode\}\}/g, context.currentMode);
+      output = output.replace(/\{\{themeMode\}\}/g, context.themeMode);
+
+      const loopRegex = /\{\{#each\s+(\w+)\}\}([\s\S]*?)\{\{\/each\}\}/g;
+      
+      output = output.replace(loopRegex, (_, listName, body) => {
+        const arr = context[listName];
+        if (!Array.isArray(arr)) return "";
+
+        return arr.map(item => {
+          let line = body;
+          line = line.replace(/\{\{key\}\}/g, item.key);
+          line = line.replace(/\{\{lightValue\}\}/g, item.lightValue);
+          line = line.replace(/\{\{darkValue\}\}/g, item.darkValue);
+          line = line.replace(/\{\{lightHex\}\}/g, item.lightHex);
+          line = line.replace(/\{\{darkHex\}\}/g, item.darkHex);
+          line = line.replace(/\{\{activeValue\}\}/g, item.activeValue);
+          line = line.replace(/\{\{activeHex\}\}/g, item.activeHex);
+          line = line.replace(/\{\{camelCase\s+key\}\}/g, toCamelCase(item.key));
+          return line;
+        }).join("");
+      });
+
+      return output;
+    }
+
+    function toCamelCase(str) {
+      return str.replace(/[-_]([a-z])/g, (_, g) => g.toUpperCase());
+    }
+
+    // ==========================================================================
+    // Interaction Handlers (Copy, Import, Layout actions)
+    // ==========================================================================
+    
+    function setThemeMode(mode) {
+      currentMode = mode;
+      document.getElementById("mode-btn-light").classList.toggle("active", mode === "light");
+      document.getElementById("mode-btn-dark").classList.toggle("active", mode === "dark");
+      
+      const preview = document.getElementById("preview-canvas-wrapper");
+      preview.className = `theme-preview-wrapper theme-mode-${mode}`;
+
+      renderWorkspace();
+    }
+
+    // Copy single cell key helper
+    function copyTokenRowKey(key) {
+      navigator.clipboard.writeText(`var(--${key})`).then(() => {
+        showToast(`Copied CSS Variable: var(--${key})`);
+      });
+    }
+
+    // Delete single token row
+    function deleteTokenRow(key) {
+      const index = tokens.findIndex(t => t.key === key);
+      if (index === -1) return;
+      const label = tokens[index].label;
+      tokens.splice(index, 1);
+      renderWorkspace();
+      showToast(`Deleted token row "${label}"`);
+    }
+
+    // Copy entire category group tokens as JSON
+    function copyGroupAsJSON(group) {
+      const groupTokens = tokens.filter(t => t.group === group);
+      const json = JSON.stringify(groupTokens, null, 2);
+      navigator.clipboard.writeText(json).then(() => {
+        showToast(`Copied "${group}" group tokens configuration!`);
+      });
+    }
+
+    function copyActiveCode() {
+      const block = document.getElementById("code-profile-output").innerText;
+      navigator.clipboard.writeText(block).then(() => {
+        showToast("Code profile copied to clipboard!");
+      });
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById("toast-notify");
+      toast.innerText = msg;
+      toast.classList.add("active");
+      setTimeout(() => {
+        toast.classList.remove("active");
+      }, 2500);
+    }
+
+    // Add empty row directly into active list
+    function addNewTokenRow() {
+      const name = prompt("Enter Token Label name:", "Custom Tint Accent");
+      if (!name) return;
+
+      const rawKey = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+      const key = prompt("Confirm Token Key variable:", rawKey);
+      if (!key) return;
+
+      if (tokens.some(t => t.key === key)) {
+        alert("This token key already exists!");
+        return;
+      }
+
+      const type = confirm("Is this color? (Cancel for spacing/dimensions)") ? "color" : "dimension";
+      
+      const defaultLight = type === "color" ? "#3b82f6" : "12px";
+      const defaultDark = type === "color" ? "#60a5fa" : "12px";
+
+      // Bind to active selected group if set, else fallback to Colors/Borders
+      const group = selectedGroupName || (type === "color" ? "Colors" : "Borders");
+
+      const newToken = {
+        key: key,
+        label: name,
+        type: type,
+        group: group,
+        value: { light: defaultLight, dark: defaultDark }
+      };
+
+      if (type === "dimension") {
+        newToken.min = 0;
+        newToken.max = 60;
+        newToken.step = 1;
+        newToken.unit = "px";
+      }
+
+      tokens.push(newToken);
+      renderWorkspace();
+      showToast(`Added token --${key} row to group "${group}"!`);
+    }
+
+    // Imports raw list of CSS Variables
+    function importCSSVariables() {
+      const input = document.getElementById("bulk-import-input").value;
+      if (!input.trim()) return;
+
+      // regex parser to grab: --key: value;
+      const varRegex = /--([a-zA-Z0-9-]+)\s*:\s*([^;]+)\s*;/g;
+      let match;
+      let count = 0;
+
+      while ((match = varRegex.exec(input)) !== null) {
+        const key = match[1].trim();
+        const value = match[2].trim();
+
+        const existingToken = tokens.find(t => t.key === key);
+        if (existingToken) {
+          existingToken.value[currentMode] = value;
+          count++;
+        } else {
+          const isColor = value.startsWith("#") || value.includes("rgb") || checkIsPantone(value);
+          const isDimension = value.endsWith("px") || value.endsWith("rem") || value.endsWith("em");
+          
+          const newToken = {
+            key: key,
+            label: key.replace(/[-_]/g, ' '),
+            type: isColor ? "color" : (isDimension ? "dimension" : "font"),
+            group: isColor ? "Colors" : "Borders",
+            value: { light: value, dark: value }
+          };
+
+          if (isDimension) {
+            newToken.unit = value.replace(/[0-9.]/g, "") || "px";
+          }
+
+          tokens.push(newToken);
+          count++;
+        }
+      }
+
+      if (count > 0) {
+        renderWorkspace();
+        showToast(`Successfully processed and imported ${count} design tokens!`);
+        document.getElementById("bulk-import-input").value = "";
+      } else {
+        alert("Could not parse any valid CSS variables. Make sure format is like:\n--var-name: #ffffff;");
+      }
+    }
+
+    // Sidebar scrolling focus
+    function scrollToFrame(frameId, sidebarElem) {
+      const frame = document.getElementById(frameId);
+      if (!frame) return;
+
+      frame.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+
+      const items = document.querySelectorAll(".layer-item");
+      items.forEach(i => i.classList.remove("active"));
+      sidebarElem.classList.add("active");
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Design Tokens & Code Profiles Automation Lab</title>
+  
+  <!-- Premium Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <style>
+    /* ==========================================================================
+       1. Core Design System & Global Styles
+       ========================================================================== */
+    :root {
+      --bg-app: #080c14;
+      --bg-panel: rgba(13, 20, 35, 0.7);
+      --bg-card: rgba(22, 32, 54, 0.45);
+      --border-color: rgba(99, 102, 241, 0.15);
+      --border-color-focus: rgba(99, 102, 241, 0.5);
+      --text-main: #f3f4f6;
+      --text-muted: #9ca3af;
+      --accent: #6366f1;
+      --accent-glow: rgba(99, 102, 241, 0.25);
+      --accent-hover: #4f46e5;
+      --success: #10b981;
+      --danger: #ef4444;
+      --shadow-premium: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+      --radius-lg: 16px;
+      --radius-md: 10px;
+      --radius-sm: 6px;
+    }
+
+    /* Dynamic CSS Variables Placeholder (Gets populated by JS) */
+    #preview-variables-container {
+      /* Dynamic properties will be loaded here */
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-app);
+      background-image: 
+        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.1) 0px, transparent 50%);
+      background-attachment: fixed;
+      color: var(--text-main);
+      min-height: 100vh;
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.1);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* ==========================================================================
+       2. Layout Elements
+       ========================================================================== */
+    header {
+      backdrop-filter: blur(12px);
+      background-color: rgba(8, 12, 20, 0.85);
+      border-bottom: 1px solid var(--border-color);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-logo {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #6366f1, #a855f7);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      color: #fff;
+      font-size: 1.1rem;
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.4);
+    }
+
+    .brand-title {
+      font-weight: 700;
+      font-size: 1.2rem;
+      letter-spacing: -0.025em;
+      background: linear-gradient(to right, #ffffff, #c7d2fe);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-columns: 320px 1fr 400px;
+      flex: 1;
+      height: calc(100vh - 65px);
+      overflow: hidden;
+    }
+
+    @media (max-width: 1200px) {
+      .workspace {
+        grid-template-columns: 1fr;
+        height: auto;
+        overflow: auto;
+      }
+    }
+
+    .panel {
+      background-color: var(--bg-panel);
+      backdrop-filter: blur(20px);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .panel-title {
+      font-weight: 600;
+      font-size: 0.95rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .panel-body {
+      padding: 1.5rem;
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ==========================================================================
+       3. Left Pane: Dynamic Token Definition (Schema Builder)
+       ========================================================================== */
+    .token-schema-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .token-schema-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.75rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      position: relative;
+      transition: all 0.2s ease;
+    }
+
+    .token-schema-item:hover {
+      border-color: var(--border-color-focus);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.05);
+    }
+
+    .token-schema-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .token-schema-label {
+      font-weight: 600;
+      font-size: 0.85rem;
+      color: var(--text-main);
+    }
+
+    .token-schema-key {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .token-schema-type-badge {
+      font-size: 0.65rem;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .badge-color { background-color: rgba(99, 102, 241, 0.2); color: #818cf8; }
+    .badge-dimension { background-color: rgba(234, 179, 8, 0.15); color: #facc15; }
+    .badge-font { background-color: rgba(168, 85, 247, 0.2); color: #c084fc; }
+
+    .btn-delete-token {
+      position: absolute;
+      top: 0.5rem;
+      right: 0.5rem;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.2s ease, color 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2px;
+      border-radius: 4px;
+    }
+
+    .token-schema-item:hover .btn-delete-token {
+      opacity: 1;
+    }
+
+    .btn-delete-token:hover {
+      color: var(--danger);
+      background-color: rgba(239, 68, 68, 0.1);
+    }
+
+    /* Button styles */
+    .btn {
+      background-color: var(--accent);
+      color: #ffffff;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 14px var(--accent-glow);
+    }
+
+    .btn:hover {
+      background-color: var(--accent-hover);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background-color: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      box-shadow: none;
+    }
+
+    .btn-secondary:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+      border-color: var(--text-muted);
+    }
+
+    .btn-sm {
+      padding: 0.35rem 0.75rem;
+      font-size: 0.75rem;
+    }
+
+    /* ==========================================================================
+       4. Middle Pane: Dynamic Controls & Canvas
+       ========================================================================== */
+    .canvas-panel {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background-color: rgba(4, 6, 10, 0.3);
+    }
+
+    .canvas-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+      background-color: rgba(8, 12, 20, 0.4);
+    }
+
+    .canvas-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    /* Toggle Mode Switches */
+    .mode-toggle-group {
+      background-color: rgba(0, 0, 0, 0.3);
+      padding: 0.25rem;
+      border-radius: var(--radius-sm);
+      display: inline-flex;
+      border: 1px solid var(--border-color);
+    }
+
+    .mode-btn {
+      background: transparent;
+      border: none;
+      padding: 0.35rem 0.85rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s ease;
+    }
+
+    .mode-btn.active {
+      background-color: var(--accent);
+      color: #fff;
+      box-shadow: 0 2px 8px var(--accent-glow);
+    }
+
+    /* Interactive Canvas Preview Area */
+    .preview-canvas {
+      flex: 1;
+      padding: 3rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow-y: auto;
+      transition: background-color 0.3s ease;
+    }
+
+    .preview-canvas.mode-light {
+      background-color: var(--theme-preview-light-bg, #ffffff);
+      background-image: 
+        radial-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 0),
+        radial-gradient(rgba(0, 0, 0, 0.05) 1px, transparent 0);
+      background-size: 20px 20px;
+      background-position: 0 0, 10px 10px;
+    }
+
+    .preview-canvas.mode-dark {
+      background-color: var(--theme-preview-dark-bg, #0b0f19);
+      background-image: 
+        radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 0),
+        radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 0);
+      background-size: 20px 20px;
+      background-position: 0 0, 10px 10px;
+    }
+
+    /* Live Preview Components */
+    .preview-container {
+      width: 100%;
+      max-width: 460px;
+      background-color: var(--theme-preview-card);
+      border: 1px solid var(--theme-preview-border);
+      border-radius: var(--theme-preview-radius-card);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      color: var(--theme-preview-card-foreground);
+      font-family: var(--theme-preview-font-sans);
+      transition: all 0.2s ease;
+    }
+
+    .preview-header-comp {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .preview-title-comp {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--theme-preview-card-foreground);
+      letter-spacing: var(--theme-preview-letter-spacing);
+    }
+
+    .preview-desc-comp {
+      font-size: 0.85rem;
+      color: var(--theme-preview-muted-foreground);
+      line-height: 1.4;
+    }
+
+    .preview-body-comp {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .preview-field {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .preview-label-comp {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--theme-preview-muted-foreground);
+    }
+
+    .preview-input-comp {
+      background-color: var(--theme-preview-input);
+      border: 1px solid var(--theme-preview-border);
+      border-radius: var(--theme-preview-radius-input);
+      padding: 0.65rem 0.85rem;
+      font-size: 0.85rem;
+      color: var(--theme-preview-card-foreground);
+      outline: none;
+      font-family: var(--theme-preview-font-sans);
+      transition: all 0.2s ease;
+    }
+
+    .preview-input-comp:focus {
+      border-color: var(--theme-preview-ring);
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+    }
+
+    .preview-button-row {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    .preview-btn-primary {
+      background-color: var(--theme-preview-primary);
+      color: var(--theme-preview-primary-foreground);
+      border: none;
+      padding: 0.65rem 1.25rem;
+      border-radius: var(--theme-preview-radius-button);
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      font-family: var(--theme-preview-font-sans);
+      transition: opacity 0.2s ease, transform 0.1s ease;
+    }
+
+    .preview-btn-primary:hover {
+      opacity: 0.9;
+    }
+
+    .preview-btn-primary:active {
+      transform: scale(0.98);
+    }
+
+    .preview-btn-secondary {
+      background-color: var(--theme-preview-secondary);
+      color: var(--theme-preview-secondary-foreground);
+      border: 1px solid var(--theme-preview-border);
+      padding: 0.65rem 1.25rem;
+      border-radius: var(--theme-preview-radius-button);
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      font-family: var(--theme-preview-font-sans);
+      transition: background-color 0.2s ease;
+    }
+
+    .preview-btn-secondary:hover {
+      opacity: 0.95;
+    }
+
+    /* Live Controls Panel (Accordion of Dynamic Inputs) */
+    .controls-panel {
+      height: 280px;
+      background-color: var(--bg-panel);
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+
+    .controls-header {
+      padding: 0.75rem 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      font-weight: 600;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      background-color: rgba(0, 0, 0, 0.15);
+    }
+
+    .controls-grid {
+      padding: 1.25rem 1.5rem;
+      overflow-y: auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.25rem;
+      flex: 1;
+      align-content: start;
+    }
+
+    /* Control Inputs */
+    .control-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .control-label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .control-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .control-value-text {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* Input: Color Picker */
+    .color-input-wrapper {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.2);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.25rem 0.5rem;
+      height: 38px;
+    }
+
+    .color-picker-native {
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      background-color: transparent;
+      border: none;
+      cursor: pointer;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .color-picker-native::-webkit-color-swatch {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      padding: 0;
+    }
+
+    .color-text-input {
+      background: transparent;
+      border: none;
+      color: var(--text-main);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      width: 100%;
+      outline: none;
+    }
+
+    /* Input: Slider */
+    .slider-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .slider-native {
+      flex: 1;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 5px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      outline: none;
+    }
+
+    .slider-native::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      box-shadow: 0 0 8px var(--accent-glow);
+      transition: transform 0.1s ease;
+    }
+
+    .slider-native::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    /* Input: Select Font */
+    .select-native {
+      background-color: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem;
+      font-size: 0.8rem;
+      outline: none;
+      width: 100%;
+      cursor: pointer;
+    }
+
+    .select-native:focus {
+      border-color: var(--border-color-focus);
+    }
+
+    /* ==========================================================================
+       5. Right Pane: Code Profile Generator
+       ========================================================================== */
+    .profile-tabs {
+      display: flex;
+      gap: 0.25rem;
+      background-color: rgba(0, 0, 0, 0.25);
+      padding: 0.25rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+      margin-bottom: 1rem;
+      overflow-x: auto;
+    }
+
+    .profile-tab-btn {
+      background: transparent;
+      border: none;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      border-radius: 4px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .profile-tab-btn.active {
+      background-color: rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+    }
+
+    .code-container {
+      background-color: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .code-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 1rem;
+      background-color: rgba(0, 0, 0, 0.2);
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.7rem;
+      color: var(--text-muted);
+    }
+
+    .code-body {
+      margin: 0;
+      padding: 1.25rem;
+      overflow: auto;
+      flex: 1;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      line-height: 1.5;
+      color: #a5b4fc;
+      white-space: pre;
+    }
+
+    /* Template Editor Customization Dialog styles */
+    .template-editor-section {
+      border-top: 1px solid var(--border-color);
+      padding-top: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .template-textarea {
+      width: 100%;
+      height: 160px;
+      background-color: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      color: #a5b4fc;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      padding: 0.75rem;
+      resize: vertical;
+      outline: none;
+    }
+
+    .template-textarea:focus {
+      border-color: var(--border-color-focus);
+    }
+
+    /* ==========================================================================
+       6. Modals & Dialogs
+       ========================================================================== */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(8px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-content {
+      background-color: #0e1626;
+      border: 1px solid var(--border-color-focus);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 440px;
+      box-shadow: var(--shadow-premium);
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      transform: scale(0.95);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .modal-overlay.active .modal-content {
+      transform: scale(1);
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+    }
+
+    .modal-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1.2rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .form-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    .form-input {
+      background-color: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.6rem 0.8rem;
+      font-size: 0.85rem;
+      color: var(--text-main);
+      outline: none;
+    }
+
+    .form-input:focus {
+      border-color: var(--border-color-focus);
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 0.75rem;
+      margin-top: 0.5rem;
+    }
+
+    /* Floating feedback notifications */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background-color: var(--success);
+      color: #fff;
+      padding: 0.75rem 1.5rem;
+      border-radius: var(--radius-sm);
+      font-weight: 600;
+      font-size: 0.85rem;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+      transform: translateY(100px);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 2000;
+    }
+
+    .toast.active {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 1. HEADER -->
+  <header>
+    <div class="brand">
+      <div class="brand-logo">A</div>
+      <div class="brand-title">Automation Layer Playground (V1 Archive)</div>
+    </div>
+  </header>
+
+  <!-- 2. MAIN WORKSPACE -->
+  <div class="workspace">
+    
+    <!-- LEFT PANEL: Dynamic Schema Builder (Active Tokens) -->
+    <div class="panel">
+      <div class="panel-header">
+        <h3 class="panel-title">Token Schema</h3>
+        <span id="token-count">8 tokens</span>
+      </div>
+      <div class="panel-body">
+        <div class="token-schema-list" id="token-schema-container"></div>
+      </div>
+    </div>
+
+    <!-- MIDDLE PANEL: Canvas -->
+    <div class="canvas-panel">
+      <div class="canvas-header">
+        <span class="canvas-title">Interactive Component Preview</span>
+        <div class="mode-toggle-group">
+          <button class="mode-btn active" id="mode-btn-light" onclick="setThemeMode('light')">Light</button>
+          <button class="mode-btn" id="mode-btn-dark" onclick="setThemeMode('dark')">Dark</button>
+        </div>
+      </div>
+
+      <div class="preview-canvas mode-light" id="preview-canvas">
+        <div class="preview-container" id="live-preview-card">
+          <div class="preview-header-comp">
+            <h4 class="preview-title-comp">Launch Workspace</h4>
+            <p class="preview-desc-comp">Modify the token values in the controls panel below to see instant visual changes on this card preview.</p>
+          </div>
+          <div class="preview-body-comp">
+            <div class="preview-field">
+              <label class="preview-label-comp">Organization Slug</label>
+              <input type="text" class="preview-input-comp" value="tweak-design-system" />
+            </div>
+            <div class="preview-button-row">
+              <button class="preview-btn-secondary">Cancel</button>
+              <button class="preview-btn-primary">Proceed to Console</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="controls-panel">
+        <div class="controls-header">Dynamic Token Values</div>
+        <div class="controls-grid" id="controls-container"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: Export -->
+    <div class="panel" style="border-right: none;">
+      <div class="panel-header">
+        <h3 class="panel-title">Code Profiles</h3>
+        <button class="btn btn-secondary btn-sm" onclick="copyGeneratedCode()">Copy</button>
+      </div>
+      <div class="panel-body">
+        <div class="profile-tabs" id="profile-tabs-container"></div>
+        <div class="code-container">
+          <div class="code-header">
+            <span id="code-filename-label">theme.css</span>
+          </div>
+          <pre class="code-body" id="code-output-block"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style id="dynamic-vars-compiler"></style>
+  <div class="toast" id="toast-notify">Copied to clipboard!</div>
+
+  <script>
+    const INITIAL_TOKENS = [
+      { key: "theme-bg", label: "Preview Background", type: "color", group: "Canvas Environment", value: { light: "#f3f4f6", dark: "#0f172a" } },
+      { key: "preview-card", label: "Card Background", type: "color", group: "Surfaces", value: { light: "#ffffff", dark: "#1e293b" } },
+      { key: "preview-card-foreground", label: "Card Text Primary", type: "color", group: "Typography Colors", value: { light: "#1f2937", dark: "#f3f4f6" } },
+      { key: "preview-muted-foreground", label: "Card Text Muted", type: "color", group: "Typography Colors", value: { light: "#6b7280", dark: "#9ca3af" } },
+      { key: "preview-primary", label: "Primary Accent", type: "color", group: "Accent Actions", value: { light: "#6366f1", dark: "#818cf8" } },
+      { key: "preview-primary-foreground", label: "Primary Accent Text", type: "color", group: "Accent Actions", value: { light: "#ffffff", dark: "#0f172a" } },
+      { key: "preview-secondary", label: "Secondary Button Color", type: "color", group: "Accent Actions", value: { light: "#f3f4f6", dark: "#334155" } },
+      { key: "preview-secondary-foreground", label: "Secondary Button Text", type: "color", group: "Accent Actions", value: { light: "#1f2937", dark: "#f3f4f6" } },
+      { key: "preview-border", label: "Borders & Outlines", type: "color", group: "Surfaces", value: { light: "#e5e7eb", dark: "#334155" } },
+      { key: "preview-input", label: "Input Fields Background", type: "color", group: "Surfaces", value: { light: "#f9fafb", dark: "#0f172a" } },
+      { key: "preview-ring", label: "Focus Ring Indicator", type: "color", group: "Accent Actions", value: { light: "#6366f1", dark: "#818cf8" } },
+      { key: "preview-radius-card", label: "Card Border Radius", type: "dimension", group: "Layout Rules", min: 0, max: 48, step: 1, unit: "px", value: { light: "16px", dark: "16px" } },
+      { key: "preview-radius-button", label: "Button Border Radius", type: "dimension", group: "Layout Rules", min: 0, max: 24, step: 1, unit: "px", value: { light: "8px", dark: "8px" } },
+      { key: "preview-radius-input", label: "Input Border Radius", type: "dimension", group: "Layout Rules", min: 0, max: 24, step: 1, unit: "px", value: { light: "8px", dark: "8px" } },
+      { key: "preview-letter-spacing", label: "Heading Tracking", type: "dimension", group: "Layout Rules", min: -0.05, max: 0.15, step: 0.01, unit: "em", value: { light: "0em", dark: "0em" } },
+      { key: "preview-font-sans", label: "Base Font Typography", type: "font", group: "Typography Styles", value: { light: "'Plus Jakarta Sans'", dark: "'Plus Jakarta Sans'" } }
+    ];
+
+    let tokens = JSON.parse(JSON.stringify(INITIAL_TOKENS));
+    let currentMode = "light";
+    let activeProfileId = "css-vars";
+
+    const CODE_PROFILES = [
+      { id: "css-vars", name: "CSS Variables", filename: "theme.css", template: `:root {\n{{#each colors}}\n  --{{key}}: {{lightValue}};\n{{/each}}\n{{#each dimensions}}\n  --{{key}}: {{lightValue}};\n{{/each}}\n{{#each fonts}}\n  --{{key}}: {{lightValue}};\n{{/each}}\n}\n\n.dark {\n{{#each colors}}\n  --{{key}}: {{darkValue}};\n{{/each}}\n{{#each dimensions}}\n  --{{key}}: {{darkValue}};\n{{/each}}\n{{#each fonts}}\n  --{{key}}: {{darkValue}};\n{{/each}}\n}` }
+    ];
+
+    window.addEventListener("DOMContentLoaded", () => { renderWorkspace(); });
+    function renderWorkspace() { renderTokenSchemaList(); renderDynamicControls(); updatePreviewStyles(); renderProfileTabs(); generateCodeOutput(); }
+    function renderTokenSchemaList() {
+      const container = document.getElementById("token-schema-container");
+      container.innerHTML = "";
+      document.getElementById("token-count").innerText = `${tokens.length} tokens`;
+      tokens.forEach((token, index) => {
+        const item = document.createElement("div");
+        item.className = "token-schema-item";
+        item.innerHTML = `<div><span>${token.label}</span></div><span>--${token.key}</span>`;
+        container.appendChild(item);
+      });
+    }
+    function renderDynamicControls() {
+      const container = document.getElementById("controls-container");
+      container.innerHTML = "";
+      tokens.forEach((token, index) => {
+        const item = document.createElement("div");
+        item.className = "control-item";
+        item.innerHTML = `<label>${token.label}</label><input type="text" value="${token.value[currentMode]}" oninput="updateTokenValue(${index}, this.value)" />`;
+        container.appendChild(item);
+      });
+    }
+    function updateTokenValue(index, val) { tokens[index].value[currentMode] = val; updatePreviewStyles(); generateCodeOutput(); }
+    function updatePreviewStyles() {
+      const styleTag = document.getElementById("dynamic-vars-compiler");
+      let cssRules = `#live-preview-card {\n`;
+      tokens.forEach(token => { cssRules += `  --theme-preview-${token.key}: ${token.value[currentMode]};\n`; });
+      cssRules += `}\n`;
+      styleTag.innerHTML = cssRules;
+    }
+    function renderProfileTabs() {
+      const container = document.getElementById("profile-tabs-container");
+      container.innerHTML = "";
+      CODE_PROFILES.forEach(profile => {
+        const tab = document.createElement("button");
+        tab.className = `profile-tab-btn active`;
+        tab.innerText = profile.name;
+        container.appendChild(tab);
+      });
+    }
+    function generateCodeOutput() {
+      const activeProfile = CODE_PROFILES[0];
+      const colorsList = tokens.filter(t => t.type === "color").map(t => ({ key: t.key, lightValue: t.value.light, darkValue: t.value.dark }));
+      let out = "";
+      colorsList.forEach(c => { out += `--${c.key}: ${currentMode === "light" ? c.lightValue : c.darkValue};\n`; });
+      document.getElementById("code-output-block").textContent = out;
+    }
+    function setThemeMode(mode) {
+      currentMode = mode;
+      document.getElementById("preview-canvas").className = `preview-canvas mode-${mode}`;
+      renderWorkspace();
+    }
+    function copyGeneratedCode() {
+      navigator.clipboard.writeText(document.getElementById("code-output-block").innerText);
+    }
+  </script>
+</body>
+</html>

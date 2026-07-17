@@ -19,11 +19,12 @@ import { cn } from "@/lib/utils";
 import { ThemeEditorPreviewProps } from "@/types/theme";
 import { Inspect, Maximize, Minimize, MoreVertical } from "lucide-react";
 import { useQueryState } from "nuqs";
-import { lazy } from "react";
+import { lazy, useState } from "react";
 import InspectorOverlay from "./inspector-overlay";
 import ColorPreview from "./theme-preview/color-preview";
 import ExamplesPreviewContainer from "./theme-preview/examples-preview-container";
 import TabsTriggerPill from "./theme-preview/tabs-trigger-pill";
+import { ElementBuilderSandbox } from "./element-builder-sandbox";
 
 const DemoCards = lazy(() => import("@/components/examples/cards"));
 const DemoApplication = lazy(() => import("@/components/examples/application"));
@@ -53,6 +54,7 @@ const ThemePreviewPanel = ({
   themeName,
 }: ThemeEditorPreviewProps & { themeId?: string; themeName?: string }) => {
   const { isFullscreen, toggleFullscreen } = useFullscreen();
+  const [viewMode, setViewMode] = useState<"editor" | "producer">("editor");
   const [activeTab, setActiveTab] = useQueryState("p", {
     defaultValue: "cards",
   });
@@ -89,35 +91,65 @@ const ThemePreviewPanel = ({
           className="flex flex-1 flex-col overflow-hidden"
         >
           <HorizontalScrollArea className="mt-2 mb-1 flex w-full items-center justify-between px-4">
-            <TabsList className="bg-background text-muted-foreground inline-flex w-fit items-center justify-center rounded-full px-0">
-              <TabsTriggerPill value="custom">Custom</TabsTriggerPill>
-              <TabsTriggerPill value="cards">Cards</TabsTriggerPill>
-
-              <div className="hidden md:flex">
-                <TabsTriggerPill value="dashboard">Dashboard</TabsTriggerPill>
-                <TabsTriggerPill value="application">Application</TabsTriggerPill>
+            <div className="flex items-center gap-3">
+              {/* Segmented Editor/Producer Toggle */}
+              <div className="flex bg-muted/60 p-0.5 rounded-full border shrink-0">
+                <button
+                  onClick={() => setViewMode("editor")}
+                  className={cn(
+                    "px-3 py-1 rounded-full text-xs font-semibold transition-all",
+                    viewMode === "editor"
+                      ? "bg-background text-foreground shadow-xs font-bold"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Editor View
+                </button>
+                <button
+                  onClick={() => setViewMode("producer")}
+                  className={cn(
+                    "px-3 py-1 rounded-full text-xs font-semibold transition-all",
+                    viewMode === "producer"
+                      ? "bg-background text-foreground shadow-xs font-bold"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  Producer View
+                </button>
               </div>
-              <TabsTriggerPill value="marketing">Marketing</TabsTriggerPill>
 
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <TooltipWrapper label="More previews" asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreVertical />
-                    </Button>
-                  </TooltipWrapper>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => handleTabChange("mail")}>Mail</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleTabChange("typography")}>
-                    Typography
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleTabChange("colors")}>
-                    Color Palette
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </TabsList>
+              {viewMode === "producer" && (
+                <TabsList className="bg-background text-muted-foreground inline-flex w-fit items-center justify-center rounded-full px-0">
+                  <TabsTriggerPill value="custom">Custom</TabsTriggerPill>
+                  <TabsTriggerPill value="cards">Cards</TabsTriggerPill>
+
+                  <div className="hidden md:flex">
+                    <TabsTriggerPill value="dashboard">Dashboard</TabsTriggerPill>
+                    <TabsTriggerPill value="application">Application</TabsTriggerPill>
+                  </div>
+                  <TabsTriggerPill value="marketing">Marketing</TabsTriggerPill>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <TooltipWrapper label="More previews" asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreVertical />
+                        </Button>
+                      </TooltipWrapper>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleTabChange("mail")}>Mail</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleTabChange("typography")}>
+                        Typography
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleTabChange("colors")}>
+                        Color Palette
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TabsList>
+              )}
+            </div>
 
             <div className="flex items-center gap-0.5">
               <TooltipWrapper label="Open theme in v0" asChild>
@@ -177,85 +209,91 @@ const ThemePreviewPanel = ({
           <section
             className={cn(
               "relative size-full overflow-hidden",
-              activeTab === "cards" ? "pb-4" : "p-4 pt-1"
+              viewMode === "producer" && activeTab === "cards" ? "pb-4" : "p-4 pt-1"
             )}
           >
             <div
               className={cn(
                 "relative isolate size-full overflow-hidden",
-                activeTab !== "cards" && "rounded-lg"
+                (viewMode === "editor" || activeTab !== "cards") && "rounded-lg"
               )}
               ref={rootRef}
               onMouseMove={handleMouseMove}
               onMouseLeave={handleMouseLeave}
             >
-              <TabsContent value="cards" className="m-0 size-full">
-                <ExamplesPreviewContainer className="size-full">
-                  <ScrollArea className="size-full">
-                    <DemoCards />
-                  </ScrollArea>
-                </ExamplesPreviewContainer>
-              </TabsContent>
+              {viewMode === "editor" ? (
+                <ElementBuilderSandbox />
+              ) : (
+                <>
+                  <TabsContent value="cards" className="m-0 size-full">
+                    <ExamplesPreviewContainer className="size-full">
+                      <ScrollArea className="size-full">
+                        <DemoCards />
+                      </ScrollArea>
+                    </ExamplesPreviewContainer>
+                  </TabsContent>
 
-              <TabsContent value="custom" className="@container m-0 size-full">
-                <ExamplesPreviewContainer className="size-full">
-                  <CustomDemo />
-                </ExamplesPreviewContainer>
-              </TabsContent>
+                  <TabsContent value="custom" className="@container m-0 size-full">
+                    <ExamplesPreviewContainer className="size-full">
+                      <CustomDemo />
+                    </ExamplesPreviewContainer>
+                  </TabsContent>
 
-              <TabsContent value="dashboard" className="@container m-0 size-full">
-                <ExamplesPreviewContainer className="size-full">
-                  <ScrollArea className="size-full">
-                    <div className="size-full min-w-[1400px]">
-                      <DemoDashboard />
-                    </div>
-                    <ScrollBar orientation="horizontal" />
-                  </ScrollArea>
-                </ExamplesPreviewContainer>
-              </TabsContent>
+                  <TabsContent value="dashboard" className="@container m-0 size-full">
+                    <ExamplesPreviewContainer className="size-full">
+                      <ScrollArea className="size-full">
+                        <div className="size-full min-w-[1400px]">
+                          <DemoDashboard />
+                        </div>
+                        <ScrollBar orientation="horizontal" />
+                      </ScrollArea>
+                    </ExamplesPreviewContainer>
+                  </TabsContent>
 
-              <TabsContent value="application" className="@container m-0 size-full">
-                <ExamplesPreviewContainer className="size-full">
-                  <ScrollArea className="size-full">
-                    <DemoApplication />
-                  </ScrollArea>
-                </ExamplesPreviewContainer>
-              </TabsContent>
+                  <TabsContent value="application" className="@container m-0 size-full">
+                    <ExamplesPreviewContainer className="size-full">
+                      <ScrollArea className="size-full">
+                        <DemoApplication />
+                      </ScrollArea>
+                    </ExamplesPreviewContainer>
+                  </TabsContent>
 
-              <TabsContent value="marketing" className="@container m-0 size-full">
-                <ExamplesPreviewContainer className="size-full">
-                  <ScrollArea className="size-full [&_[data-slot=scroll-area-scrollbar]]:z-[60]">
-                    <DemoMarketing />
-                  </ScrollArea>
-                </ExamplesPreviewContainer>
-              </TabsContent>
+                  <TabsContent value="marketing" className="@container m-0 size-full">
+                    <ExamplesPreviewContainer className="size-full">
+                      <ScrollArea className="size-full [&_[data-slot=scroll-area-scrollbar]]:z-[60]">
+                        <DemoMarketing />
+                      </ScrollArea>
+                    </ExamplesPreviewContainer>
+                  </TabsContent>
 
-              <TabsContent value="mail" className="@container m-0 size-full">
-                <ExamplesPreviewContainer className="size-full">
-                  <ScrollArea className="size-full">
-                    <div className="size-full min-w-[1300px] rounded-lg border">
-                      <DemoMail />
-                    </div>
-                    <ScrollBar orientation="horizontal" />
-                  </ScrollArea>
-                </ExamplesPreviewContainer>
-              </TabsContent>
+                  <TabsContent value="mail" className="@container m-0 size-full">
+                    <ExamplesPreviewContainer className="size-full">
+                      <ScrollArea className="size-full">
+                        <div className="size-full min-w-[1300px] rounded-lg border">
+                          <DemoMail />
+                        </div>
+                        <ScrollBar orientation="horizontal" />
+                      </ScrollArea>
+                    </ExamplesPreviewContainer>
+                  </TabsContent>
 
-              <TabsContent value="typography" className="m-0 size-full">
-                <ExamplesPreviewContainer className="size-full">
-                  <ScrollArea className="size-full">
-                    <TypographyDemo />
-                  </ScrollArea>
-                </ExamplesPreviewContainer>
-              </TabsContent>
+                  <TabsContent value="typography" className="m-0 size-full">
+                    <ExamplesPreviewContainer className="size-full">
+                      <ScrollArea className="size-full">
+                        <TypographyDemo />
+                      </ScrollArea>
+                    </ExamplesPreviewContainer>
+                  </TabsContent>
 
-              <TabsContent value="colors" className="m-0 size-full">
-                <ScrollArea className="size-full">
-                  <div className="p-4">
-                    <ColorPreview styles={styles} currentMode={currentMode} />
-                  </div>
-                </ScrollArea>
-              </TabsContent>
+                  <TabsContent value="colors" className="m-0 size-full">
+                    <ScrollArea className="size-full">
+                      <div className="p-4">
+                        <ColorPreview styles={styles} currentMode={currentMode} />
+                      </div>
+                    </ScrollArea>
+                  </TabsContent>
+                </>
+              )}
             </div>
           </section>
         </Tabs>
