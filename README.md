@@ -2,8 +2,6 @@
 
 **Theme Maker** is a visual design system editor and component wireframing workbench. It allows developers and designers to build structured token schemas, duplicate token matrices dynamically, wireframe custom layouts, and bind properties (backgrounds, text, fonts, radii) directly to design tokens with Pantone autocomplete support.
 
-![Visual Theme Maker](public/og-image.v050725.png)
-
 ---
 
 ## Key Features
@@ -59,3 +57,5 @@
    ```
 
 3. Open **[http://localhost:3000](http://localhost:3000)** in your browser.
+
+forked shadcn
