@@ -1,89 +1,61 @@
-<div align="center">
-  <h1>tweakcn.com</h1>
-</div>
+# Theme Maker - Advanced Design Tokens Visualizer & Wireframe Sandbox
 
-<div align="center">
-  <a href="https://vercel.com/oss">
-    <img alt="Vercel OSS Program" src="https://vercel.com/oss/program-badge.svg" />
-  </a>
-  <br />
-  <br />
-  <a href="https://discord.gg/Phs4u2NM3n" target="_blank">
-    <img alt="Discord" src="https://img.shields.io/discord/1353416868769173576?style=for-the-badge&logo=discord&logoColor=%23ffffff">
-  </a>
-  <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/jnsahaj/tweakcn?style=for-the-badge&logo=github">
-  <a href="https://x.com/iamsahaj_xyz">
-    <img alt="X (formerly Twitter) URL" src="https://img.shields.io/twitter/url?url=https%3A%2F%2Fx.com%2Fiamsahaj_xyz&style=for-the-badge&logo=x&label=%40iamsahaj_xyz&color=%2300000000" />
-  </a>
-</div>
+**Theme Maker** is a visual design system editor and component wireframing workbench. It allows developers and designers to build structured token schemas, duplicate token matrices dynamically, wireframe custom layouts, and bind properties (backgrounds, text, fonts, radii) directly to design tokens with Pantone autocomplete support.
 
-<br />
+![Visual Theme Maker](public/og-image.v050725.png)
 
-**[tweakcn](https://tweakcn.com)** is a powerful Visual Theme Editor for tailwind CSS & shadcn/ui components. It comes with Beautiful theme presets to get started, while aiming to offer advanced customisation for each aspect of your UI
+---
 
-![tweakcn.com](public/og-image.v050725.png)
+## Key Features
 
-## Motivation
+### 📋 Figma-style Design Tokens Matrix
+* **Visual Group cards**: Tokens are grouped into visual table cards (e.g. Colors, Layout, Typography, Sidebar).
+* **Workspace card selections**: Click on a card to select it. A highlighted border indicates the active selected group.
+* **Rapid Duplication (`Ctrl+D`)**: Press `Ctrl+D` (or click duplicate in the header) to clone the selected token group card. Cloned tokens automatically receive unique keys (`-copy`) and names.
 
-Websites made with shadcn/ui famously look the same. tweakcn is a tool that helps you customize shadcn/ui components visually, to make your components stand-out. The goal is to build a platform where a user can discover endless customization options and then have the ability to put their own twist on it.
+### 🎨 Pantone & Hex Autocomplete Engine
+* **Autocomplete ghost inputs**: Color inputs suggest matching colors from the local Pantone fashion/interiors library inline in grayed-out italics.
+* **Shortcut acceptance**: Press `Tab`, `ArrowRight`, or `Enter` to autocomplete the suggestions instantly.
+* **Resolution layer**: Automatically converts Pantone naming conventions to HEX under-the-hood so your previews render correctly.
 
-## Current Features
+### 📐 Figma-like Layout Canvas Editor (Editor View)
+* **Recursive layers tree**: Compose elements out of nested primitives: **Frame** (flex container), **Rectangle**, **Circle**, **Text**, and **Image**.
+* **Flex layout constraints**: Adjust direction (flex row/column), padding, and gap spacing directly from the Layer Inspector.
+* **Semantic Token bindings**: Bind background fill, text color, border-radius, and font properties directly to active project design tokens. If unbound, layers utilize configurable "raw state" fallbacks.
+* **Visual canvas selections**: Click layers on the visual canvas grid to inspect, resize, or delete them.
 
-You can find the full feature list here: https://tweakcn.com/#features
+### 📁 Projects Workspace Manager
+* **Multi-project support**: Switch between different layup projects in real-time.
+* **SaaS Template Project**: Includes a read-only default Shadcn/UI SaaS template mockup (viewable in the **Producer View**) with a reset utility.
+* **Custom Sandboxes**: Create clean projects from scratch with minimalist starting tokens to build your design systems from the ground up.
 
-## Run Locally
+---
 
-**IMPORTANT: For contributions, please see [CONTRIBUTING.md](CONTRIBUTING.md).**
+## Tech Stack
+* **Framework**: Next.js 15 (React 19)
+* **Styling**: Tailwind CSS & Vanilla CSS Variables
+* **State Management**: Zustand (Persisted client-side)
+* **Icons**: Lucide React
+* **Typings**: TypeScript
+
+---
+
+## Local Development
 
 ### Prerequisites
-
-- Node.js 18+
-- npm / yarn / pnpm
+* Node.js 18+
+* npm, pnpm, or yarn
 
 ### Installation
 
-1. Clone the repository:
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-```bash
-git clone https://github.com/jnsahaj/tweakcn.git
-cd tweakcn
-```
+2. Start the development server:
+   ```bash
+   npm run dev
+   ```
 
-2. Install dependencies:
-
-```bash
-npm install
-```
-
-3. Start the development server:
-
-```bash
-npm run dev
-```
-
-4. Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-## Contributors
-
-<a href="https://github.com/jnsahaj/tweakcn/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=jnsahaj/tweakcn" />
-</a>
-
-Made with [contrib.rocks](https://contrib.rocks).
-
-### Interested in Contributing?
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-# Star History
-
-<p align="center">
-  <a target="_blank" href="https://star-history.com/#jnsahaj/tweakcn&Date">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=jnsahaj/tweakcn&type=Date&theme=dark">
-      <img alt="GitHub Star History for jnsahaj/tweakcn" src="https://api.star-history.com/svg?repos=jnsahaj/tweakcn&type=Date">
-    </picture>
-  </a>
-</p>
-
-<!-- GitAds-Verify: HX84XPI5OQ816367AROGJ9SROARUHQER -->
+3. Open **[http://localhost:3000](http://localhost:3000)** in your browser.
